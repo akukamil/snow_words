@@ -145,7 +145,7 @@ class letter_button_class extends PIXI.Container{
 		
 		this.l=new PIXI.BitmapText(this.letter, {fontName: 'mfont',fontSize: 60});
 		this.l.tint=0xffffff;
-		this.l.x=38;
+		this.l.x=37;
 		this.l.y=40;
 		this.l.anchor.set(0.5,0.5);
 		
