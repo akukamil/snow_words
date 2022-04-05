@@ -144,7 +144,7 @@ class letter_button_class extends PIXI.Container{
 		this.bcg.pointerdown=game.letter_down.bind(game,this);
 		
 		this.l=new PIXI.BitmapText(this.letter, {fontName: 'mfont',fontSize: 60});
-		this.l.tint=0x000000;
+		this.l.tint=0xffffff;
 		this.l.x=40;
 		this.l.y=40;
 		this.l.anchor.set(0.5,0.5);
