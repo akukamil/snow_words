@@ -1413,7 +1413,7 @@ var game = {
 		
 		//наказание за простой
 		if (my_role === 'master') {
-			if (Date.now() > this.last_word_time + 20000 ) {
+			if (Date.now() > this.last_word_time + 30000 ) {
 				//отправляем слейву
 				firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",tm:Date.now()});
 				
