@@ -1741,8 +1741,8 @@ var social_dialog = {
 			return;
 		
 		gres.click.sound.play();
-		vkBridge.send('VKWebAppShowWallPostBox', {"message": `Мой рейтинг в игре Quoridor ${my_data.rating}. Сможешь победить меня?`,
-		"attachments": "https://vk.com/app8095798"});
+		vkBridge.send('VKWebAppShowWallPostBox', {"message": `Я король айсберга. Мой рейтинг в игре Слова из снега ${my_data.rating}. Сможешь победить меня?`,
+		"attachments": "https://vk.com/app8127413"});
 		social_dialog.close();
 	},
 	
