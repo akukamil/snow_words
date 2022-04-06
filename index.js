@@ -1395,14 +1395,14 @@ var game = {
 		if (this.my_move_amount > 0) {
 			
 			let shift_amount = this.shift_vs_amount[this.my_move_amount];			
-			objects.my_icon.x -= shift_amount;
+			objects.my_icon.x -= shift_amount*5;
 			this.my_move_amount -= shift_amount;
 		}
 		
 		if (this.opp_move_amount > 0) {
 			
 			let shift_amount = this.shift_vs_amount[this.opp_move_amount];	
-			objects.opp_icon.x += shift_amount;
+			objects.opp_icon.x += shift_amount*5;
 			this.opp_move_amount -= shift_amount;
 		}
 				
@@ -1478,7 +1478,7 @@ var game = {
 		
 	}
 		
-
+	
 }
 
 var keep_alive = function() {
@@ -3129,8 +3129,8 @@ function set_state(params) {
 
 function vis_change() {
 
-	if (document.hidden === true) {
-		if (state === 'p') {
+	if (document.hidden === true ) {
+		if (state === 'p' && game.my_sink === 0 && game.opp_sink === 0) {
 			game.stop('my_hidden')			
 			firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"opp_hidden",tm:Date.now()});
 		}
