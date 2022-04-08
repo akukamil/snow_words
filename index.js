@@ -1045,6 +1045,7 @@ var game = {
 		objects.cur_word.visible = false;	
 		objects.all_words.visible = false;	
 		objects.sea.sprite.visible = false;	
+		objects.confirm_buttons_cont.visible = false;	
 
 		//убираем все комки (они могли остаться)
 		for (let b of objects.snowballs)
@@ -1771,6 +1772,7 @@ var main_menu = {
 		
 		//просто добавляем контейнер с кнопками
 		objects.desktop.visible=true;
+		//objects.desktop.alpha=0.8;
 		objects.desktop.texture=gres.desktop.texture;
 		
 		//показываем название игры
@@ -1795,6 +1797,7 @@ var main_menu = {
 		//убираем море
 		anim2.add(objects.sea.sprite,{alpha: [1,0]}, false, 0.5,'linear');
 
+		objects.desktop.alpha=1;
 	},
 
 	play_button_down: async function () {
@@ -2011,6 +2014,7 @@ var cards_menu = {
 
 		objects.header4.visible=true;
 		objects.desktop.texture=gres.desktop2.texture;
+		objects.desktop.alpha=0.4;
 
 		//расставляем по соответствующим координатам
 		for(let i=0;i<15;i++) {
@@ -2211,25 +2215,18 @@ var cards_menu = {
 		
 	},
 
-	get_state_tint: function(s) {
+	get_state_tex: function(s) {
 
 		switch(s) {
 
 			case "o":
-				return this.state_tint.o;
+				return gres.mini_player_card.texture;
 			break;
 
 			case "b":
-				return this.state_tint.b;
+				return gres.mpc_bot.texture;
 			break;
 
-			case "p":
-				return this.state_tint.p;
-			break;
-
-			case "w":
-				return this.state_tint.w;
-			break;
 		}
 	},
 
@@ -2247,7 +2244,6 @@ var cards_menu = {
 				
 				
 				objects.mini_cards[i].bcg.texture = gres.mini_player_card_table.texture;
-				objects.mini_cards[i].bcg.tint=this.state_tint.p;
 				
 				//присваиваем карточке данные
 				//objects.mini_cards[i].uid=params.uid;
@@ -2291,7 +2287,7 @@ var cards_menu = {
 	update_existing_card: function(params={id:0, state:"o" , rating:1400}) {
 
 		//устанавливаем цвет карточки в зависимости от состояния(имя и аватар не поменялись)
-		objects.mini_cards[params.id].bcg.tint=this.get_state_tint(params.state);
+		objects.mini_cards[params.id].bcg.texture=this.get_state_tex(params.state);
 		objects.mini_cards[params.id].state=params.state;
 
 		objects.mini_cards[params.id].rating=params.rating;
@@ -2308,7 +2304,7 @@ var cards_menu = {
 
 				//устанавливаем цвет карточки в зависимости от состояния
 				objects.mini_cards[i].bcg.texture = gres.mini_player_card.texture;
-				objects.mini_cards[i].bcg.tint=this.get_state_tint(params.state);
+				objects.mini_cards[i].bcg.texture=this.get_state_tex(params.state);
 				objects.mini_cards[i].state=params.state;
 
 				objects.mini_cards[i].type = "single";
@@ -2429,7 +2425,7 @@ var cards_menu = {
 		objects.mini_cards[0].avatar2.visible = false;
 		objects.mini_cards[0].rating_bcg.visible = false;
 
-		objects.mini_cards[0].bcg.tint=this.state_tint.bot;
+		objects.mini_cards[0].bcg.texture=gres.mpc_ai.texture;
 		objects.mini_cards[0].visible=true;
 		objects.mini_cards[0].uid="AI";
 		objects.mini_cards[0].name="Бот";
@@ -2532,7 +2528,7 @@ var cards_menu = {
 
 		objects.cards_cont.visible=false;
 		objects.back_button_cont.visible=false;
-		//objects.desktop.visible=false;
+		objects.desktop.alpha=1;
 
 		objects.lobby_frame.visible=false;
 		objects.header4.visible=false;
@@ -3257,8 +3253,8 @@ async function load_resources() {
 	return;*/
 
 
-	let git_src="https://akukamil.github.io/snow_words"
-	//let git_src=""
+	//let git_src="https://akukamil.github.io/snow_words"
+	let git_src=""
 
 
 	game_res=new PIXI.Loader();
