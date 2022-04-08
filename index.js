@@ -1396,14 +1396,14 @@ var game = {
 		if (this.my_move_amount > 0) {
 			
 			let shift_amount = this.shift_vs_amount[this.my_move_amount];			
-			objects.my_icon.x -= shift_amount*5;
+			objects.my_icon.x -= shift_amount;
 			this.my_move_amount -= shift_amount;
 		}
 		
 		if (this.opp_move_amount > 0) {
 			
 			let shift_amount = this.shift_vs_amount[this.opp_move_amount];	
-			objects.opp_icon.x += shift_amount*5;
+			objects.opp_icon.x += shift_amount;
 			this.opp_move_amount -= shift_amount;
 		}
 				
