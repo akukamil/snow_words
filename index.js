@@ -3147,13 +3147,16 @@ function set_state(params) {
 function vis_change() {
 
 	if (document.hidden === true ) {
+		
+		hidden_state_start = Date.now();
+		
 		if (state === 'p' && game.my_sink === 0 && game.opp_sink === 0) {
 			game.stop('my_hidden')			
 			firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"opp_hidden",tm:Date.now()});
 		}
-
-		
 	}
+	
+	set_state({hidden : document.hidden});
 		
 }
 
