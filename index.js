@@ -904,7 +904,7 @@ var wait_timer = {
 var game = {
 	
 	opponent : {},
-	words_hist : [],
+	word_hist : [],
 	opp_sink : 0,
 	my_sink : 0,
 	last_word_time : 0,
@@ -1463,7 +1463,7 @@ var game = {
 		game.turn_word_to_bullets(word, ME);
 		
 		//проверяем если слово уже есть
-		if (this.words_hist.includes(word) === true)
+		if (this.word_hist.includes(word) === true)
 			return;
 		
 		this.word_hist.push(word)
