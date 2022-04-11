@@ -1438,8 +1438,8 @@ var game = {
 			if (Date.now() > this.last_word_time + 30000 ) {
 				
 				
-				let block0='ОЕАИОЕАИНТСРВЛКМДП';				
-				let new_let = block0[irnd(0,block0.length-1)];
+				//выбираем новую букву
+				let new_let = this.get_new_letter();
 				
 				//отправляем слейву
 				firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",new_let:new_let,tm:Date.now()});
@@ -1463,6 +1463,24 @@ var game = {
 					this.sink_opponent();
 		}
 	
+	},
+	
+	get_new_letter : function() {
+		
+		for (let i = 0 ; i < 100 ; i++) {
+						
+			let block0='ОЕАИОЕАИНТСРВЛКМДП';				
+			let new_let = block0[irnd(0,block0.length-1)];		
+			let already_have = 0;
+			for (let l_b of objects.l_buttons) {				
+				if (new_let === l_b.letter)
+					already_have = 1;
+			}	
+			
+			if (already_have === 0)
+				return new_let;	
+			
+		}
 	},
 	
 	receive_move : async function (word) {
