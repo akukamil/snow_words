@@ -3254,6 +3254,9 @@ async function init_game_env() {
 	//это событие когда меняется видимость приложения
 	document.addEventListener("visibilitychange", vis_change);
 			
+	//keep-alive сервис
+	setInterval(function()	{keep_alive()}, 40000);
+			
 	//показыаем основное меню
 	main_menu.activate();
 		
