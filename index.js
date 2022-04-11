@@ -651,6 +651,7 @@ var online_player = {
 	
 	name : 'online',
 	syn_ok : 0,
+	start_time : 0,	
 	
 	activate : function() {
 		
@@ -663,6 +664,9 @@ var online_player = {
 				
 		//проверка синхронизации пока не пройдена
 		this.syn_ok = 0;
+		
+		//фиксируем врему начала игры
+		this.start_time = Date.now();
 				
 		//устанавливаем статус в базе данных а если мы не видны то установливаем только скрытое состояние
 		set_state({state : 'p'});
@@ -724,6 +728,20 @@ var online_player = {
 		if (result === 'my_cancel')
 			firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"opp_cancel",tm:Date.now()});
 
+
+
+		//если игра результативна то записываем дополнительные данные
+		if (result_number === DRAW || result_number === LOSE || result_number === WIN) {
+			
+			//увеличиваем количество игр
+			my_data.games++;
+			firebase.database().ref("players/"+[my_data.uid]+"/games").set(my_data.games);		
+
+			//записываем результат в базу данных
+			let duration = ~~((Date.now() - this.start_time)*0.001);
+			firebase.database().ref("finishes/"+game_id + my_role).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result,'duration':duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
+			
+		}
 		
 		//воспроизводим звук
 		if (result_number === DRAW || result_number === LOSE || result_number === NOSYNC )
@@ -1664,7 +1682,7 @@ var req_dialog = {
 
 				
 		//отправляем информацию о согласии играть с идентификатором игры и словом
-		game_id=~~(Math.random()*299);
+		game_id=~~(Math.random()*999);
 		firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"ACCEPT",tm:Date.now(),game_id:game_id, main_word : main_word});
 
 		//заполняем карточку оппонента
