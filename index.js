@@ -931,6 +931,12 @@ var game = {
 		this.last_word_time = Date.now();
 		this.time_pen_row = 0;
 		
+		//отключаем все комки
+		for (let b of objects.snowballs) {						
+			b.visible = false; 
+			b.active = 0;
+		}
+		
 		//остаточное количество движения
 		this.my_move_amount = 0;
 		this.opp_move_amount = 0;
@@ -1039,10 +1045,7 @@ var game = {
 		
 		//отключаем процессинги
 		some_process.main = function(){};
-		
-		
-
-		
+				
 		//принимаем локальный стейт
 		state = 'o';
 				
@@ -1095,7 +1098,7 @@ var game = {
 
 	letter_down : function(l) {			
 		
-		if (this.my_sink === 1 || this.opp_sink === 1)
+		if (this.my_sink === 1 || this.opp_sink === 1  || objects.req_cont.visible === true)
 			return;
 		
 		gres.letter_click.sound.play();
@@ -1125,7 +1128,7 @@ var game = {
 	confirm : function() {
 		
 		
-		if (objects.confirm_buttons_cont.ready === false) {
+		if (objects.confirm_buttons_cont.ready === false || objects.req_cont.visible === true) {
 			gres.locked.sound.play();
 			return;			
 		}
@@ -1433,10 +1436,15 @@ var game = {
 		//наказание за простой
 		if (my_role === 'master') {
 			if (Date.now() > this.last_word_time + 30000 ) {
-				//отправляем слейву
-				firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",tm:Date.now()});
 				
-				this.time_hit();					
+				
+				let block0='ОЕАИОЕАИНТСРВЛКМДП';				
+				let new_let = block0[irnd(0,block0.length-1)];
+				
+				//отправляем слейву
+				firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",new_let:new_let,tm:Date.now()});
+				
+				this.time_hit(new_let);					
 			}
 		
 		}
@@ -1472,7 +1480,7 @@ var game = {
 		
 	},
 	
-	time_hit : async function() {
+	time_hit : async function(new_let) {
 		
 		//фиксируем время слова
 		this.last_word_time = Date.now();		
@@ -1487,6 +1495,16 @@ var game = {
 		
 		//проигрываем звук
 		gres.clock.sound.play();
+		
+		
+		
+		//новые буквы		
+		let old_pos = objects.l_buttons[6].y;
+		await anim2.add(objects.l_buttons[6],{y:[objects.l_buttons[6].y,500]}, true, 0.5,'linear');
+		objects.l_buttons[6].set_letter(new_let);
+		anim2.add(objects.l_buttons[6],{y:[500,old_pos]}, true, 0.5,'linear');
+		
+		
 		
 		//передвигаем обоих
 		this.my_move_amount += shift_vs_row[this.time_pen_row];
@@ -1550,7 +1568,7 @@ var process_new_message = function(msg) {
 
 			//получение согласия на игру
 			if (msg.message==="TIME_HIT")
-				game.time_hit();
+				game.time_hit(msg.new_let);
 
 			//получение стикера
 			if (msg.message==="MSG")
