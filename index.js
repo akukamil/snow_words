@@ -335,7 +335,7 @@ var anim2 = {
 					params: params,
 					vis_on_end: vis_on_end,
 					func: this[func].bind(anim2),
-					speed: 0.01818 / time,
+					speed: 0.0222 / time,
 					progress: 0
 				};
 				f = 1;
@@ -1208,16 +1208,15 @@ var game = {
 				if (target === ME) {
 					b.x = objects.opp_icon.x;	
 					b.time = 0;
-					b.dx = -5;
-					b.dr = -0.25;
+					b.dx = -6.25;
+
 				}
 				else 
 				{
 					b.x = objects.my_icon.x;	
 					b.time = 0;
-					b.dx = 5;
-					b.dr = 0.25;
-					
+					b.dx = 6.25;
+
 					//устнавливаем сосотояние броска
 					objects.my_icon.state = SEND;
 					objects.my_icon.texture = gres.my_icon_send.texture;
@@ -1336,7 +1335,7 @@ var game = {
 
 				b.x += b.dx;
 				b.time++;
-				b.y = 110 - Math.abs(Math.cos(b.time*0.25))*20 					
+				b.y = 110 - Math.abs(Math.cos(b.time*0.3125))*20 					
 				
 				
 				//если комок улетел не туда
@@ -1896,7 +1895,7 @@ var main_menu = {
 		gres.click.sound.play();
 
 	
-		anim2.add(objects.rules_cont,{y:[-450, objects.rules_cont.sy]}, true, 1,'easeOutBack');
+		anim2.add(objects.rules_cont,{y:[-450, objects.rules_cont.sy]}, true, 0.75,'easeOutBack');
 
 	},
 
@@ -1907,7 +1906,7 @@ var main_menu = {
 			return;			
 		}
 		
-		anim2.add(objects.rules_cont,{y:[objects.rules_cont.y,-450, ]}, false, 1,'easeInBack');
+		anim2.add(objects.rules_cont,{y:[objects.rules_cont.y,-450, ]}, false, 0.75,'easeInBack');
 	},
 	
 	process : function () {
@@ -3302,7 +3301,8 @@ async function init_game_env() {
 	console.clear()
 	
 	//запускаем главный цикл
-	main_loop();
+	app.ticker.maxFPS = 45;
+	app.ticker.add(main_loop);
 
 }
 
@@ -3359,18 +3359,16 @@ async function load_resources() {
 }
 
 function main_loop() {
+	
 
-
-	game_tick+=0.016666666;
+	game_tick+=0.02222222;
 	anim2.process();
 	wait_timer.process();
 	
 	//обрабатываем минипроцессы
 	for (let key in some_process)
-		some_process[key]();
+		some_process[key]();		
 
-
-	requestAnimationFrame(main_loop);
 }
 
 
