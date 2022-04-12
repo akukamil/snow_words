@@ -1435,7 +1435,7 @@ var game = {
 		
 		//наказание за простой
 		if (my_role === 'master') {
-			if (Date.now() > this.last_word_time + 25000 ) {
+			if (Date.now() > this.last_word_time + 20000 ) {
 				
 				
 				//выбираем новую букву
