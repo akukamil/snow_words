@@ -1516,7 +1516,7 @@ var game = {
 		
 		console.log("Time hit", my_role, objects.my_icon.x, objects.opp_icon.x);
 				
-		let shift_vs_row = [10,15,20,25,25,25,25,25,25,25,25,25,25,25];
+		let shift_vs_row = [5,10,15,20,20,20,25,25,25,25,25,25,25,25];
 		
 		//проигрываем звук
 		gres.clock.sound.play();
