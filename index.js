@@ -1476,7 +1476,7 @@ var game = {
 		
 		for (let i = 0 ; i < 100 ; i++) {
 						
-			let block0='ОЕАИОЕАИНТСРВЛКМДП';				
+			let block0='ОЕАИНТСРВЛКМДПГЗБ';				
 			let new_let = block0[irnd(0,block0.length-1)];		
 			let already_have = 0;
 			for (let l_b of objects.l_buttons) {				
