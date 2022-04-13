@@ -4,7 +4,7 @@ var players="", pending_player="";
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
 const ME = 0, OPP = 1;
-let main_word_conf = [4,3];
+let main_word_conf = [3,3];
 const WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2;
 const IDLE =0, HITED = 1, SINKED = 2, SEND = 3;
 
@@ -995,10 +995,15 @@ var game = {
 		objects.desktop.texture=gres.desktop2.texture;
 		objects.desktop.visible = true;
 		
-		//показыаем буквы кнопки
-		let iter = 0;
-	
+		//отключаем все буквы
+		for (let b of objects.l_buttons)
+			b.visible = false;
 		
+		//определяем структуру слов
+		main_word_conf = [3,3];
+		
+		//показыаем буквы кнопки
+		let iter = 0;		
 		for (let r = 0 ; r < 2; r++) {
 			
 			let num_of_col = main_word_conf[r];
@@ -1182,6 +1187,7 @@ var game = {
 	
 		//фиксируем время слова
 		this.last_word_time = Date.now();
+		
 		this.time_pen_row = 0;
 	
 		//зависимость сдвига от количества букв
@@ -1435,14 +1441,15 @@ var game = {
 		
 		//наказание за простой
 		if (my_role === 'master') {
-			if (Date.now() > this.last_word_time + 20000 ) {
+			if (Date.now() > this.last_word_time + 15000 ) {
 				
 				
 				//выбираем новую букву
 				let new_let = this.get_new_letter();
 				
 				//отправляем слейву
-				firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",new_let:new_let,tm:Date.now()});
+				if (state === 'p')
+					firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",new_let:new_let,tm:Date.now()});
 				
 				this.time_hit(new_let);					
 			}
@@ -1503,7 +1510,7 @@ var game = {
 		//фиксируем время слова
 		this.last_word_time = Date.now();		
 		
-		await anim2.add(objects.angry_clock,{y:[-100,objects.angry_clock.sy]}, true, 1.5,'easeOutBack');
+		await anim2.add(objects.angry_clock,{y:[-100,objects.angry_clock.sy]}, true, 0.75,'easeOutBack');
 		
 		anim2.add(objects.angry_clock,{y:[objects.angry_clock.sy,-100]}, false, 0.5,'easeInBack');
 		
@@ -1516,20 +1523,41 @@ var game = {
 		
 		
 		
-		//новые буквы		
-		let old_pos = objects.l_buttons[6].y;
-		await anim2.add(objects.l_buttons[6],{y:[objects.l_buttons[6].y,500]}, true, 0.5,'linear');
-		objects.l_buttons[6].set_letter(new_let);
-		anim2.add(objects.l_buttons[6],{y:[500,old_pos]}, true, 0.5,'linear');
-		
-		
-		
 		//передвигаем обоих
 		this.my_move_amount += shift_vs_row[this.time_pen_row];
 		this.opp_move_amount += shift_vs_row[this.time_pen_row];
 		
 
-		this.time_pen_row++;
+		this.time_pen_row++;		
+		
+		
+		//первая новая буква
+		if (objects.l_buttons[6].visible === false) {
+			
+			objects.l_buttons[6].set_letter(new_let);		
+			objects.l_buttons[6].x = 470;
+			anim2.add(objects.l_buttons[6],{y:[450,300]}, true, 0.5,'easeOutCubic');			
+			
+			for (let b = 0 ; b < 3; b++)
+				anim2.add(objects.l_buttons[b],{x:[objects.l_buttons[b].x,objects.l_buttons[b].x-35]}, true, 0.5,'linear');	
+			main_word_conf[0] = 4;
+			return;
+		}
+		
+		//вторая новая буква
+		if (objects.l_buttons[7].visible === false) {
+			
+			objects.l_buttons[7].set_letter(new_let);		
+			objects.l_buttons[7].x = 470;
+			anim2.add(objects.l_buttons[7],{y:[450,370]}, true, 0.5,'easeOutCubic');			
+			
+			for (let b = 3 ; b < 6; b++)
+				anim2.add(objects.l_buttons[b],{x:[objects.l_buttons[b].x,objects.l_buttons[b].x-35]}, true, 0.5,'linear');	
+			main_word_conf[1] = 4;
+			return;
+		}
+		
+
 		
 	}
 		
