@@ -1083,7 +1083,7 @@ var game = {
 		anim2.add(objects.opp_icon,{y:[ objects.opp_icon.y, -150]}, false, 1.8,'linear');	
 				
 		//убираем буквы		
-		for (let l of  objects.l_buttons)
+		for (let l of objects.l_buttons)
 			l.visible = false;
 		
 		opp_data.uid = '';
@@ -1108,7 +1108,6 @@ var game = {
 		
 		gres.letter_click.sound.play();
 		
-		console.log(l.letter);
 		objects.cur_word.text +=l.letter;
 		
 		if (objects.confirm_buttons_cont.visible === false)
