@@ -972,7 +972,7 @@ var game = {
 			b.active = 0;
 			anim2.kill_anim(b);
 		}
-		console.log(Date.now());
+
 		
 		//остаточное количество движения
 		this.my_move_amount = 0;
@@ -1240,7 +1240,7 @@ var game = {
 	
 	add_bullet : function(letter, target, x_shift) {			
 		
-		console.log(Date.now());
+
 		for (let b of objects.snowballs) {
 			if (b.visible === false) {
 				
@@ -3120,8 +3120,6 @@ var auth = function() {
 
 			process : function () {
 
-				objects.id_loup.x=20*Math.sin(game_tick*8)+90;
-				objects.id_loup.y=20*Math.cos(game_tick*8)+110;
 			}
 		}
 
@@ -3158,7 +3156,7 @@ async function load_user_data() {
 		//анимация лупы
 		some_process.loup_anim=function() {
 			objects.id_loup.x=20*Math.sin(game_tick*8)+90;
-			objects.id_loup.y=20*Math.cos(game_tick*8)+110;
+			objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 		}
 	
 		//получаем данные об игроке из социальных сетей
