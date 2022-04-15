@@ -175,7 +175,7 @@ class snowball_class extends PIXI.Container{
 		this.bcg.buttonMode=true;
 		this.bcg.pointerover=function(){this.tint=0x5544ff};
 		this.bcg.pointerout=function(){this.tint=0xffffff};
-		this.bcg.pointerdown=game.letter_down.bind(game,this);
+		//this.bcg.pointerdown=game.letter_down.bind(game,this);
 		this.bcg.anchor.set(0.5,0.5);
 		
 		
@@ -803,16 +803,35 @@ var bot_player = {
 	
 	last_word_time : 0,
 	name : 'bot',
+	delay_search_time : 7,
+	game_id : 0,
 	
 	activate : function() {	
 
 		set_state({state : 'b'});
+		
+		
+		game_id=~~(Math.random()*99999);
 
 		//придумываем слово
 		main_word = get_random_word();
 		
 		//сдвигаем время для отсрочки начала поиска
 		this.last_word_time = game_tick;
+		
+		this.delay_search_time = 6;
+		
+		if (my_data.rating > 1450)
+			this.delay_search_time = 5;
+		
+		if (my_data.rating > 1500)
+			this.delay_search_time = 4;
+		
+		if (my_data.rating > 1550)
+			this.delay_search_time = 3;
+		
+		if (my_data.rating > 1600)
+			this.delay_search_time = 2;
 		
 		//процессинговая функция
 		some_process.bot = this.process.bind(bot_player);
@@ -834,24 +853,41 @@ var bot_player = {
 			return;			
 		
 		//ждем несколько секунд после последнего слова
-		if (game_tick - this.last_word_time < 7)
+		if (game_tick - this.last_word_time < this.delay_search_time)
 			return;
 				
 		//ище случайное слово случайной длины
 		let w_len = main_word_conf[0] + main_word_conf[1];
-		let word_len = irnd(3, w_len);
-		let word = '';
-		for (let i = 0 ; i < word_len; i++) {
+		let word5 = '';
+		for (let i = 0 ; i < 5; i++) {
 			let random_pos = irnd(0, w_len - 1);
-			word += objects.l_buttons[random_pos].letter;
+			word5 += objects.l_buttons[random_pos].letter;
 		}
 		
 		//если слово есть в словаре то запускаем пули
-		if (game.word_hist.includes(word)===false && rus_dict0.includes(word)===true) {
-			
-			game.receive_move(word);			
+		if (game.word_hist.includes(word5)===false && rus_dict0.includes(word5)===true) {			
+			game.receive_move(word5);			
 			this.last_word_time = game_tick;
-		}
+			return;
+		}				
+		
+		let word4 = word5.substring(0,4);
+		//если слово есть в словаре то запускаем пули
+		if (game.word_hist.includes(word4)===false && rus_dict0.includes(word4)===true) {			
+			game.receive_move(word4);			
+			this.last_word_time = game_tick;
+			return;
+		}	
+		
+		let word3 = word5.substring(0,3);
+		//если слово есть в словаре то запускаем пули
+		if (game.word_hist.includes(word3)===false && rus_dict0.includes(word3)===true) {			
+			game.receive_move(word3);			
+			this.last_word_time = game_tick;
+			return;
+		}	
+		
+
 
 	},
 	
@@ -914,8 +950,7 @@ var game = {
 	shift_vs_amount : [0,1,1,1,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
 	
 	activate: async function(role, opponent) {
-					
-					
+										
 					
 		//убираем окно подтверждения если оно есть
 		if (objects.confirm_cont.visible === true)
@@ -935,7 +970,9 @@ var game = {
 		for (let b of objects.snowballs) {						
 			b.visible = false; 
 			b.active = 0;
+			anim2.kill_anim(b);
 		}
+		console.log(Date.now());
 		
 		//остаточное количество движения
 		this.my_move_amount = 0;
@@ -1031,8 +1068,7 @@ var game = {
 		
 	stop : async function (result) {
 						
-		
-		
+				
 		//если отменяем игру то сначала предупреждение
 		if (result === 'my_cancel') {
 			
@@ -1060,8 +1096,7 @@ var game = {
 		//убираем окно подтверждения если оно есть
 		if (objects.confirm_cont.visible === true && objects.confirm_cont.ready === true )
 			anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.y,-300]}, false, 1,'easeInOutCubic');		
-		
-		
+				
 		//сначала завершаем все что связано с оппонентом
 		await this.opponent.stop(result);		
 						
@@ -1157,7 +1192,7 @@ var game = {
 		//Все нормально
 		this.word_hist.push(objects.cur_word.text)
 		objects.all_words.text += objects.cur_word.text +' ';			
-		this.turn_word_to_bullets(objects.cur_word.text, OPP);
+		this.turn_word_to_bullets(objects.cur_word.text, OPP, game_id);
 		this.opponent.send_move(objects.cur_word.text);
 		objects.cur_word.text ='';	
 	
@@ -1181,7 +1216,7 @@ var game = {
 		}	
 	},
 		
-	turn_word_to_bullets : async function(word, target) {	
+	turn_word_to_bullets : async function(word, target, id) {	
 	
 	
 		//фиксируем время слова
@@ -1194,17 +1229,18 @@ var game = {
 		
 		//добавляем комки
 		for (let i = 0 ; i < word.length ; i++) {		
+			if (game_id !== id)
+				return;
+			
 			this.add_bullet(word[i], target, x_shift[i]);			
 			await new Promise((resolve, reject) => wait_timer.add(0.15,resolve));
 		}
 		
-		
-		
-		
 	},
 	
-	add_bullet : async function(letter, target, x_shift) {			
+	add_bullet : function(letter, target, x_shift) {			
 		
+		console.log(Date.now());
 		for (let b of objects.snowballs) {
 			if (b.visible === false) {
 				
@@ -1492,7 +1528,7 @@ var game = {
 	receive_move : async function (word) {
 		
 
-		game.turn_word_to_bullets(word, ME);
+		game.turn_word_to_bullets(word, ME, game_id);
 		
 		//проверяем если слово уже есть
 		if (this.word_hist.includes(word) === true)
