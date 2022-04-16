@@ -1852,15 +1852,13 @@ var req_dialog = {
 var	show_ad = async function(){
 		
 	if (game_platform==="YANDEX") {		
-		try {
-			await new Promise((resolve, reject) => {			
-				window.ysdk.adv.showFullscreenAdv({  callbacks: {onClose: function() {resolve()}, onError: function() {resolve()}}});			
-			});				
-			
-		} catch (e) {
-			
-			console.error(e);
-		}
+		//показываем рекламу
+		window.ysdk.adv.showFullscreenAdv({
+		  callbacks: {
+			onClose: function() {}, 
+			onError: function() {}
+					}
+		})
 
 	}
 	
