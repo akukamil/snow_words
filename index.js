@@ -1,12 +1,12 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app, game_res, game, objects={}, state="",my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, made_moves=0, game_platform="", hidden_state_start = 0, connected = 1;
+var app, game_res, game, objects={}, state="o",my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, made_moves=0, game_platform="", hidden_state_start = 0, connected = 1;
 var players="", pending_player="";
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
 const ME = 0, OPP = 1;
 let main_word_conf = [3,3];
 const WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2;
-const IDLE =0, HITED = 1, SINKED = 2, SEND = 3;
+const IDLE =0, HITED = 1, SINKING = 2, THROWING = 3, FALLING = 4;
 
 var rus_let =  ['А','Б','В','Г','Д','Е','Ж','З','И','К','Л','М','Н','О','П','Р','С','Т','У','Ф','Х','Ц','Ч','Ш','Щ','Ь','Ю','Я'];
 
@@ -1001,7 +1001,7 @@ var game = {
 		this.my_sink = this.opp_sink = 0;
 		this.word_hist=[];
 
-
+		//показываем кнопку выхода
 		anim2.add(objects.exit_button,{x:[-50, objects.exit_button.sx]},true,0.5,'linear');
 
 		//показываем море
@@ -1016,15 +1016,21 @@ var game = {
 		objects.opp_icon.x = 500;
 		objects.my_icon.rotation=objects.opp_icon.rotation = 0;
 		
+			
+		//определяем скин айди оппонента
+		opp_data.skin_id = 0;
+		if (this.opponent.name === 'online')
+			this.update_opp_skin_id();			
+			
+			
 		//устанаваем состояния
-		objects.opp_icon.texture = gres.opp_icon.texture;
-		objects.my_icon.texture = gres.my_icon.texture;
+		this.set_player_state(objects.my_icon, IDLE);
+		this.set_player_state(objects.opp_icon, IDLE);
 		
-		objects.my_icon.state = IDLE;
-		objects.my_icon.state_time = 0;
-		objects.opp_icon.state = IDLE;
-		objects.opp_icon.state_time = 0;
-		
+
+				
+				
+		//опускаем наших игроков
 		anim2.add(objects.my_icon,{y:[-150, objects.my_icon.sy]}, true, 1.7,'linear');	
 		anim2.add(objects.opp_icon,{y:[-150, objects.opp_icon.sy]}, true, 1.8,'linear');	
 
@@ -1064,6 +1070,15 @@ var game = {
 		
 		some_process.main = this.process.bind(game);
 		
+	},
+	
+	update_opp_skin_id : async function () {
+		
+		//считываем и обновляем скин соперника
+		let _skin_id = await firebase.database().ref("players/"+opp_data.uid +"/skin_id").once('value');
+		opp_data.skin_id = _skin_id.val() || 0;
+		this.set_player_state(objects.opp_icon, objects.opp_icon.state);
+
 	},
 		
 	stop : async function (result) {
@@ -1251,6 +1266,9 @@ var game = {
 					b.time = 0;
 					b.dx = -5;
 					b.dr = -0.25;
+					
+					//устнавливаем сосотояние броска
+					this.set_player_state(objects.opp_icon, THROWING);
 				}
 				else 
 				{
@@ -1260,9 +1278,7 @@ var game = {
 					b.dr = 0.25;
 					
 					//устнавливаем сосотояние броска
-					objects.my_icon.state = SEND;
-					objects.my_icon.texture = gres.my_icon_send.texture;
-					objects.my_icon.state_time =game_tick;	
+					this.set_player_state(objects.my_icon, THROWING);
 				}
 				
 				b.y = 90;				
@@ -1307,12 +1323,12 @@ var game = {
 		objects.shark.scale.x = -1;
 		objects.shark.texture  = gres.shark.texture;		
 		
-		objects.opp_icon.texture = gres.sink.texture;
-		objects.opp_icon.state=SINKED;
+		this.set_player_state(objects.opp_icon, FALLING);		
 		this.opp_sink = 1;
+		
 		await anim2.add(objects.opp_icon,{x:[objects.opp_icon.x,710],y:[objects.opp_icon.y,330]}, true, 2,'linear');
 		gres.hero_sink.sound.play();
-		objects.opp_icon.texture = gres.sinked.texture;
+		this.set_player_state(objects.opp_icon, SINKING);
 		anim2.add(objects.opp_icon,{y:[objects.opp_icon.y,objects.opp_icon.y+50]}, true, 3,'linear');			
 		await anim2.add(objects.shark,{y:[950,280]},true,2,'linear');
 		objects.shark.texture  = gres.shark_ate_texture.texture;
@@ -1332,21 +1348,18 @@ var game = {
 		if (objects.confirm_buttons_cont.visible===true)
 			anim2.add(objects.confirm_buttons_cont,{x:[objects.confirm_buttons_cont.x, 900]}, true, 0.25,'easeInBack');	
 
-
-
 		gres.falling.sound.play();
-	
-		
+			
 		objects.shark.scale.x = 1;
 		objects.shark.texture  = gres.shark.texture;
 		objects.shark.x = -5;
 		
-		objects.my_icon.texture = gres.sink.texture;
-		objects.my_icon.state=SINKED;
+		this.set_player_state(objects.my_icon, FALLING);
 		this.my_sink = 1;
 		await anim2.add(objects.my_icon,{x:[objects.my_icon.x,100],y:[objects.my_icon.y,330]}, true, 1.5,'linear');
 		gres.hero_sink.sound.play();
-		objects.my_icon.texture = gres.sinked.texture;
+		
+		this.set_player_state(objects.my_icon, SINKING);
 		anim2.add(objects.my_icon,{y:[objects.my_icon.y,objects.my_icon.y+50]}, true, 3,'linear');			
 		await anim2.add(objects.shark,{y:[950,280]},true,2,'linear');
 		objects.shark.texture  = gres.shark_ate_texture.texture;
@@ -1365,6 +1378,44 @@ var game = {
 			return;
 		
 		this.stop('my_cancel');
+		
+	},
+		
+	set_player_state : function(player, p_state) {
+		
+		
+		player.state = p_state;
+		player.state_time = game_tick;
+		let skin_id = 0;
+		
+		if (player === objects.my_icon)
+			skin_id = my_data.skin_id;
+		else
+			skin_id = opp_data.skin_id;
+		
+		switch (p_state) {
+						
+			case IDLE:
+				player.texture = gres['idle' + skin_id].texture;
+			break;
+			
+			case HITED:
+				player.texture = gres['hited' + skin_id].texture;
+			break;
+			
+			case THROWING:
+				player.texture = gres['throwing' + skin_id].texture;
+			break;
+			
+			case FALLING:
+				player.texture = gres['falling' + skin_id].texture;
+			break;
+			
+			case SINKING:
+				player.texture = gres['sinking' + skin_id].texture;
+			break;
+		}
+		
 		
 	},
 		
@@ -1393,13 +1444,10 @@ var game = {
 						b.visible = false;	
 						b.active=0
 						gres.snowball_hit.sound.play();	
-
 						
 						if (this.my_sink === 0 && this.opp_sink === 0) {
-							this.my_move_amount += b.x_shift;									
-							objects.my_icon.state = HITED;
-							objects.my_icon.texture = gres.my_icon_hit.texture;
-							objects.my_icon.state_time =game_tick;		
+							this.my_move_amount += b.x_shift;
+							this.set_player_state(objects.my_icon, HITED);
 							this.add_snow_pieces(b.x ,b.y, ME);
 							this.add_snow_pieces(b.x ,b.y, ME);
 							this.add_snow_pieces(b.x ,b.y, ME);
@@ -1414,12 +1462,9 @@ var game = {
 						b.active=0
 						gres.snowball_hit.sound.play();	
 
-
 						if (this.my_sink === 0 && this.opp_sink === 0) {
 							this.opp_move_amount +=  b.x_shift;									
-							objects.opp_icon.state = HITED;
-							objects.opp_icon.texture = gres.opp_icon_hit.texture;
-							objects.opp_icon.state_time =game_tick;			
+							this.set_player_state(objects.opp_icon, HITED);		
 							this.add_snow_pieces(b.x ,b.y, OPP);
 							this.add_snow_pieces(b.x ,b.y, OPP);
 							this.add_snow_pieces(b.x ,b.y, OPP);
@@ -1430,26 +1475,24 @@ var game = {
 		}		
 		
 		//обработка состояний
-		if (objects.opp_icon.state === HITED) {
-			if (game_tick - objects.opp_icon.state_time > 0.5) {
-				objects.opp_icon.state = IDLE;
-				objects.opp_icon.texture = gres.opp_icon.texture;
-			}
-		}
+		if (objects.opp_icon.state === HITED)
+			if (game_tick - objects.opp_icon.state_time > 0.5)
+				this.set_player_state(objects.opp_icon, IDLE);
+
 		
-		if (objects.my_icon.state === HITED) {
-			if (game_tick - objects.my_icon.state_time > 0.5) {
-				objects.my_icon.state = IDLE;
-				objects.my_icon.texture = gres.my_icon.texture;
-			}
-		}
+		if (objects.my_icon.state === HITED)
+			if (game_tick - objects.my_icon.state_time > 0.5)
+				this.set_player_state(objects.my_icon, IDLE);
+
 		
-		if (objects.my_icon.state === SEND) {
-			if (game_tick - objects.my_icon.state_time > 0.5) {
-				objects.my_icon.state = IDLE;
-				objects.my_icon.texture = gres.my_icon.texture;
-			}
-		}
+		if (objects.opp_icon.state === THROWING)
+			if (game_tick - objects.opp_icon.state_time > 0.5)
+				this.set_player_state(objects.opp_icon, IDLE);
+
+		
+		if (objects.my_icon.state === THROWING)
+			if (game_tick - objects.my_icon.state_time > 0.5)
+				this.set_player_state(objects.my_icon, IDLE);
 		
 		
 		
@@ -2175,8 +2218,9 @@ var cards_menu = {
 		
 		//создаем массив свободных игроков
 		for (let uid in players){			
-			if (players[uid].state !== 'p' && players[uid].hidden === 0)
-				single[uid] = players[uid].name;						
+			if (players[uid].state === 'o' || players[uid].state === 'b')
+				if (players[uid].hidden === 0)
+					single[uid] = players[uid].name;						
 		}
 		
 		//console.table(single);
@@ -2339,7 +2383,7 @@ var cards_menu = {
 			case "o":
 				return gres.mini_player_card.texture;
 			break;
-
+			
 			case "b":
 				return gres.mpc_bot.texture;
 			break;
@@ -2610,10 +2654,7 @@ var cards_menu = {
 
 		gres.click.sound.play();
 
-		//показыаем кнопку приглашения
-		
-
-	
+		//показыаем кнопку приглашения			
 		anim2.add(objects.invite_cont,{y:[450, objects.invite_cont.sy]}, true, 0.6,'easeOutBack');
 
 		//копируем предварительные данные
@@ -3179,21 +3220,18 @@ async function load_user_data() {
 		let data = snapshot.val();
 		
 		//делаем защиту от неопределенности
-		data===null ?
-			my_data.rating=1400 :
-			my_data.rating = data.rating || 1400;
+		my_data.rating = data.rating || 1400;
+		my_data.games = data.games || 1400;
+		my_data.skin_id = data.skin_id || 0;
+		my_data.money = data.money || 1400;
 			
-		data===null ?
-			my_data.games = 0 :
-			my_data.games = data.games || 0;
 			
 		//отключение от игры и удаление не нужного
 		firebase.database().ref("inbox/"+my_data.uid).onDisconnect().remove();
 		firebase.database().ref("states/"+my_data.uid).onDisconnect().remove();			
 			
-
 		//устанавливаем рейтинг в попап
-		objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
+		objects.id_rating.text=objects.my_card_rating.text = my_data.rating;
 
 		//обновляем почтовый ящик
 		firebase.database().ref("inbox/"+my_data.uid).set({sender:"-",message:"-",tm:"-",data:{x1:0,y1:0,x2:0,y2:0,board_state:0}});
@@ -3202,18 +3240,16 @@ async function load_user_data() {
 		firebase.database().ref("inbox/"+my_data.uid).on('value', (snapshot) => { process_new_message(snapshot.val());});
 
 		//обновляем данные в файербейс так как могли поменяться имя или фото
-		firebase.database().ref("players/"+my_data.uid).set({name:my_data.name, pic_url: my_data.pic_url, rating : my_data.rating, games : my_data.games, tm:firebase.database.ServerValue.TIMESTAMP});
+		firebase.database().ref("players/"+my_data.uid + "/pic_url").set(my_data.pic_url);
+		firebase.database().ref("players/"+my_data.uid + "/name").set(my_data.name);
+		
 
 		//устанавливаем мой статус в онлайн
 		set_state({state : 'o'});
-		
-
-
-	
+			
 		//ждем и убираем попап
 		await new Promise((resolve, reject) => setTimeout(resolve, 1000));
 		
-
 		anim2.add(objects.id_cont,{y:[objects.id_cont.y, -200]}, false, 1,'easeInBack');
 		
 		some_process.loup_anim=function() {};
