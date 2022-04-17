@@ -1,6 +1,6 @@
 var M_WIDTH=800, M_HEIGHT=450;
 var app, game_res, game, objects={}, state="o",my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
-var players="", pending_player="";
+var players="", pending_player="", room_name = 'states2';
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
 const ME = 0, OPP = 1;
@@ -1276,7 +1276,7 @@ var game = {
 		this.time_pen_row = 0;
 	
 		//зависимость сдвига от количества букв
-		let x_shift = [1,2,3,5,6,7,8,9,10,10,10,10,10,10,10,10,10,10];
+		let x_shift = [0,1,2,5,6,7,8,9,10,10,10,10,10,10,10,10,10,10];
 		
 		//добавляем комки
 		for (let i = 0 ; i < word.length ; i++) {		
@@ -1692,7 +1692,7 @@ var keep_alive = function() {
 
 	firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
 	firebase.database().ref("inbox/"+my_data.uid).onDisconnect().remove();
-	firebase.database().ref("states/"+my_data.uid).onDisconnect().remove();
+	firebase.database().ref(room_name + "/"+my_data.uid).onDisconnect().remove();
 
 	set_state({});
 }
@@ -2315,7 +2315,7 @@ var cards_menu = {
 		objects.players_online.visible=true;
 
 		//подписываемся на изменения состояний пользователей
-		firebase.database().ref("states") .on('value', (snapshot) => {cards_menu.players_list_updated(snapshot.val());});
+		firebase.database().ref(room_name) .on('value', (snapshot) => {cards_menu.players_list_updated(snapshot.val());});
 
 	},
 
@@ -2395,7 +2395,8 @@ var cards_menu = {
 		for (let uid in players)
 			if (players[uid].hidden===0)
 				num++
-		objects.players_online.text=['Игроков онлайн: ','Players online: '][LANG] + num;
+			
+		objects.players_online.text='Игроков онлайн: '+ num + ' (комната ' + room_name + ')';
 		
 		
 		//считаем сколько одиночных игроков и сколько столов
@@ -2824,7 +2825,7 @@ var cards_menu = {
 		objects.players_online.visible=false;
 
 		//подписываемся на изменения состояний пользователей
-		firebase.database().ref("states").off();
+		firebase.database().ref(room_name).off();
 
 	},
 
@@ -3384,12 +3385,15 @@ async function load_user_data() {
 		
 		
 
-		
+		if (my_data.rating > 1430)
+			room_name = 'states2'
+		else
+			room_name = 'states'
 		
 			
 		//отключение от игры и удаление не нужного
 		firebase.database().ref("inbox/"+my_data.uid).onDisconnect().remove();
-		firebase.database().ref("states/"+my_data.uid).onDisconnect().remove();			
+		firebase.database().ref(room_name + "/"+my_data.uid).onDisconnect().remove();			
 			
 		//устанавливаем рейтинг в попап
 		objects.id_rating.text=objects.my_card_rating.text = my_data.rating;
@@ -3434,7 +3438,7 @@ function set_state(params) {
 	if (opp_data.uid!==undefined)
 		small_opp_id=opp_data.uid.substring(0,10);
 
-	firebase.database().ref("states/"+my_data.uid).set({state:state, name:my_data.name, rating : my_data.rating, hidden:h_state, opp_id : small_opp_id});
+	firebase.database().ref(room_name + "/"+my_data.uid).set({state:state, name:my_data.name, rating : my_data.rating, hidden:h_state, opp_id : small_opp_id});
 
 }
 
