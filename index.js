@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app, game_res, game, objects={}, state="o",my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, made_moves=0, game_platform="", hidden_state_start = 0, connected = 1;
+var app, game_res, game, objects={}, state="o",my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
 var players="", pending_player="";
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
@@ -194,6 +194,38 @@ class snowball_class extends PIXI.Container{
 		this.letter = l;
 		this.l.text = l;		
 	}
+	
+}
+
+class shop_card_class extends PIXI.Container {
+	
+	
+	constructor (x, y, price, skin_id) {
+		
+		super();
+		this.x=x;
+		this.y=y;
+		this.bcg = new PIXI.Sprite(gres.buy_card_bcg.texture);
+		this.bcg.interactive=true;
+		this.bcg.buttonMode=true;
+		this.bcg.pointerover=function(){this.tint=0x9999ff};
+		this.bcg.pointerout=function(){this.tint=0xffffff};
+		this.bcg.pointerdown=shop.card_down.bind(this);
+		
+		this.skin_id = skin_id;
+		this.skin_avatar = new PIXI.Sprite(gres.idle1.texture);
+		this.skin_avatar.x = this.skin_avatar.y = 35;
+		
+		this.price = price;
+		this.price_text = new PIXI.BitmapText('Цена: ' + price, {fontName: 'mfont',fontSize: 30});
+		this.price_text.y=150;
+		this.price_text.x=75;
+		this.price_text.anchor.set(0.5,0.5);
+		this.addChild(this.bcg,this.skin_avatar, this.price_text);
+		
+	}
+	
+	
 	
 }
 
@@ -950,11 +982,7 @@ var game = {
 	shift_vs_amount : [0,1,1,1,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
 	
 	activate: async function(role, opponent) {
-										
-					
-		//убираем окно подтверждения если оно есть
-		if (objects.confirm_cont.visible === true)
-			anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.y,-300]}, false, 1,'easeInOutCubic');		
+
 					
 		//устанавливаем роль
 		my_role = role;
@@ -978,9 +1006,17 @@ var game = {
 		this.my_move_amount = 0;
 		this.opp_move_amount = 0;
 		
+		//убираем окно подтверждения если оно есть
+		if (objects.confirm_cont.visible === true)
+			anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.y,-300]}, false, 1,'easeInOutCubic');	
+		
 		//если открыт лидерборд то закрываем его
 		if (objects.lb_1_cont.visible===true)
 			lb.close();
+		
+		//если открыт магаз то закрываем его
+		if (shop.active === 1)
+			shop.close();
 		
 		//активируем все что связано с оппонентом
 		this.opponent.activate();
@@ -1747,6 +1783,8 @@ var req_dialog = {
 
 				gres.invite.sound.play();
 				
+				//защита от неправильного рейтинга
+				player_data.rating = player_data.rating || 1400;
 				
 				//так как успешно получили данные о сопернике то показываем окно	
 				anim2.add(objects.req_cont,{y:[-260, objects.req_cont.sy]}, true, 1,'easeOutElastic');
@@ -1936,6 +1974,9 @@ var main_menu = {
 		//показываем название игры
 		anim2.add(objects.maze_logo,{alpha: [0,1],y:[-200, objects.maze_logo.sy]}, true, 1,'linear');
 		
+		//показываем кнопку магазина
+		anim2.add(objects.shop_button,{x:[-200, objects.shop_button.sx]}, true, 1,'linear');
+		
 		//показываем кнопки
 		anim2.add(objects.main_buttons_cont,{y:[450, objects.main_buttons_cont.sy],alpha: [0,1]}, true, 0.75,'linear');
 		
@@ -1951,6 +1992,9 @@ var main_menu = {
 		
 		//убираем кнопки
 		anim2.add(objects.main_buttons_cont,{y:[ objects.main_buttons_cont.y, 450],alpha: [1,0]}, false, 0.5,'linear');
+		
+		//убираем кнопку магазина
+		anim2.add(objects.shop_button,{x:[objects.shop_button.x, -200]}, false, 1,'linear');
 		
 		//убираем море
 		anim2.add(objects.sea.sprite,{alpha: [1,0]}, false, 0.5,'linear');
@@ -2000,7 +2044,7 @@ var main_menu = {
 		gres.click.sound.play();
 
 	
-		anim2.add(objects.rules_cont,{y:[-450, objects.rules_cont.sy]}, true, 1,'easeOutBack');
+		anim2.add(objects.rules_cont,{y:[-450, objects.rules_cont.sy]}, true, 0.5,'easeOutBack');
 
 	},
 
@@ -2011,9 +2055,25 @@ var main_menu = {
 			return;			
 		}
 		
-		anim2.add(objects.rules_cont,{y:[objects.rules_cont.y,-450, ]}, false, 1,'easeInBack');
+		anim2.add(objects.rules_cont,{y:[objects.rules_cont.y,-450, ]}, false, 0.5,'easeInBack');
 	},
 	
+	shop_button_down : function() {
+		
+		message.add('Закрыто!');
+		return;
+		
+		
+		if (objects.shop_button.ready === false || objects.big_message_cont.visible === true || objects.main_buttons_cont.ready === false || objects.id_cont.visible === true) {
+			gres.bad_move.sound.play();
+			return;			
+		}		
+		
+		this.close();
+		shop.activate();		
+		
+	},
+		
 	process : function () {
 		
 		// анимация волны
@@ -2022,6 +2082,68 @@ var main_menu = {
 	
 	}
 
+}
+
+var shop = {
+	
+	active : 0,
+	
+	activate : function () {
+		
+
+
+		this.active = 1;
+		anim2.add(objects.shop_cont,{alpha: [0,1]}, true, 0.5,'linear');
+		objects.desktop.texture=gres.desktop2.texture;
+		objects.ice_cream_balance.text = 'x' + my_data.money;
+	},
+	
+	card_down : async function () {
+		
+		if (objects.confirm_cont.visible === true)
+			return;
+		
+		if (this.price > my_data.money) {
+			message.add('Недостаточно мороженок (((');
+			return;
+		}
+		
+		let res = await confirm_dialog.show('Точно хотите купить?');
+		if (res === 'no')
+			return;
+		
+		//обновляем количество денег
+		my_data.money -= this.price;
+		firebase.database().ref("players/"+my_data.uid+"/money").set(my_data.money);
+		firebase.database().ref("players/"+my_data.uid+"/skin_id").set(this.skin_id);
+		objects.ice_cream_balance.text = 'x' + my_data.money;
+		my_data.skin_id = this.skin_id;
+		message.add('Вы купили новый скин )))')
+		game.set_player_state(objects.my_icon, objects.my_icon.state);
+		
+		console.log(this.price)
+		
+	},
+		
+	exit_down : function() {
+		
+		if (objects.shop_cont.ready === false)
+			return;
+		
+		this.close();
+		main_menu.activate();
+		
+	},	
+			
+	close : function () {
+		
+
+		
+		this.active = 0;
+		anim2.add(objects.shop_cont,{alpha: [1,0]}, false, 0.5,'linear');
+		objects.desktop.texture=gres.desktop.texture;
+	}
+	
 }
 
 var lb = {
@@ -3151,7 +3273,7 @@ var auth = function() {
 				//обновляем базовые данные в файербейс так могло что-то поменяться
 				firebase.database().ref("players/"+my_data.uid+"/name").set(my_data.name);
 				firebase.database().ref("players/"+my_data.uid+"/pic_url").set(my_data.pic_url);
-				firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
+				
 
 				//вызываем коллбэк
 				resolve("ok");
@@ -3183,6 +3305,35 @@ function resize() {
     }
     app.renderer.resize(nvw, nvh);
     app.stage.scale.set(nvw / M_WIDTH, nvh / M_HEIGHT);
+}
+
+async function check_daily_reward (last_seen_ts) {
+	
+	
+	//вычисляем номер дня последнего посещения
+	let last_seen_day = new Date(last_seen_ts).getDate();		
+	
+	//считываем текущее время
+	await firebase.database().ref("server_time").set(firebase.database.ServerValue.TIMESTAMP);
+
+	//определяем текущий день
+	let _cur_ts = await firebase.database().ref("server_time").once('value');
+	let cur_ts = _cur_ts.val();
+	let cur_day = new Date(cur_ts).getDate();
+	
+	//обновляем время последнего посещения
+	firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
+	
+	if (cur_day !== last_seen_day) {		
+		my_data.money++;
+		firebase.database().ref("players/"+my_data.uid + "/money").set(my_data.money);		
+		console.log("Награда за новый день!")
+		
+		await anim2.add(objects.daily_reward,{y:[450, objects.daily_reward.sy]}, true, 1,'easeOutBack');
+		anim2.add(objects.daily_reward,{y:[objects.daily_reward.sy, 450]}, false, 1,'easeInBack');
+		
+	}
+
 }
 
 async function load_user_data() {
@@ -3221,8 +3372,20 @@ async function load_user_data() {
 		my_data.rating = data.rating || 1400;
 		my_data.games = data.games || 1400;
 		my_data.skin_id = data.skin_id || 0;
-		my_data.money = data.money || 1400;
-			
+		my_data.money = data.money || 0;		
+		
+		
+		//определяем последнее время посещения
+		let last_seen_ts = data.tm || 1000;
+		
+
+		
+		check_daily_reward(last_seen_ts);
+		
+		
+
+		
+		
 			
 		//отключение от игры и удаление не нужного
 		firebase.database().ref("inbox/"+my_data.uid).onDisconnect().remove();
