@@ -3371,7 +3371,7 @@ async function load_user_data() {
 		
 		//делаем защиту от неопределенности
 		my_data.rating = data.rating || 1400;
-		my_data.games = data.games || 1400;
+		my_data.games = data.games || 0;
 		my_data.skin_id = data.skin_id || 0;
 		my_data.money = data.money || 0;		
 		
