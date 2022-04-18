@@ -213,7 +213,7 @@ class shop_card_class extends PIXI.Container {
 		this.bcg.pointerdown=shop.card_down.bind(this);
 		
 		this.skin_id = skin_id;
-		this.skin_avatar = new PIXI.Sprite(gres.idle1.texture);
+		this.skin_avatar = new PIXI.Sprite(gres['idle'+skin_id].texture);
 		this.skin_avatar.x = this.skin_avatar.y = 35;
 		
 		this.price = price;
@@ -2060,8 +2060,8 @@ var main_menu = {
 	
 	shop_button_down : function() {
 		
-		message.add('Закрыто!');
-		return;
+		//message.add('Закрыто!');
+		//return;
 		
 		
 		if (objects.shop_button.ready === false || objects.big_message_cont.visible === true || objects.main_buttons_cont.ready === false || objects.id_cont.visible === true) {
@@ -3324,7 +3324,7 @@ async function check_daily_reward (last_seen_ts) {
 	
 	//обновляем время последнего посещения
 	firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
-	
+	//firebase.database().ref("players/"+my_data.uid + "/money").set(999);	
 	if (cur_day !== last_seen_day) {		
 		my_data.money++;
 		firebase.database().ref("players/"+my_data.uid + "/money").set(my_data.money);		
@@ -3569,7 +3569,6 @@ async function init_game_env() {
 }
 
 async function load_resources() {
-
 	
 	//это нужно удалить потом
 	/*document.body.innerHTML = "Привет!\nДобавляем в игру некоторые улучшения))\nЗайдите через 40 минут.";
@@ -3634,5 +3633,4 @@ function main_loop() {
 
 	requestAnimationFrame(main_loop);
 }
-
 
