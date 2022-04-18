@@ -2108,6 +2108,11 @@ var shop = {
 			return;
 		}
 		
+		if (my_data.skin_id === this.skin_id) {
+			message.add('У вас уже есть этот скин!!!');
+			return;
+		}
+		
 		let res = await confirm_dialog.show('Точно хотите купить?');
 		if (res === 'no')
 			return;
