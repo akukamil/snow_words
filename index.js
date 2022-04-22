@@ -1003,7 +1003,7 @@ var game = {
 		}
 
 		if (room_name === 'states2')
-			this.max_idle_time = 20000;
+			this.max_idle_time = 18000;
 		else
 			this.max_idle_time = 15000;	
 		
