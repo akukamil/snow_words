@@ -975,6 +975,7 @@ var game = {
 	word_hist : [],
 	opp_sink : 0,
 	my_sink : 0,
+	max_idle_time : 15000,
 	last_word_time : 0,
 	time_pen_row : 0,
 	my_move_amount : 0,
@@ -1001,6 +1002,11 @@ var game = {
 			anim2.kill_anim(b);
 		}
 
+		if (room_name === 'states2')
+			this.max_idle_time = 20000;
+		else
+			this.max_idle_time = 15000;	
+		
 		
 		//остаточное количество движения
 		this.my_move_amount = 0;
@@ -1555,7 +1561,7 @@ var game = {
 		
 		//наказание за простой
 		if (my_role === 'master') {
-			if (Date.now() > this.last_word_time + 15000 ) {
+			if (Date.now() > this.last_word_time + this.max_idle_time ) {
 				
 				
 				//выбираем новую букву
