@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<body>
+
 
 
 
@@ -67,11 +67,11 @@
   		<div class="two_buttons_area">
 
 			<div class="button_with_text">
-				<button class="button" onclick="states_room('states')">Комната №1</button>
+				<button class="button"  id ="but_ref1"  onclick="states_room('states')">Комната №1</button>
 			</div>
 
 			<div class="button_with_text">
-				<button class="button" onclick="states_room('states2')">Комната №2</button>
+				<button class="button"  id ="but_ref2"  onclick="states_room('states2')">Комната №2</button>
 			</div>
 
 		</div>
@@ -129,9 +129,15 @@
 
 		</div>
   
+
+
+</html>
+
+<body onload="update_room_quick_stat()">
+</body>
+
   
 <script>
-
 
 firebase.initializeApp({
 	apiKey: "AIzaSyCDV8ndfTwbMq1jAv2VGxrWHLZ0mtvZJmQ",
@@ -143,6 +149,26 @@ firebase.initializeApp({
 	appId: "1:851590264454:web:e7185c5fa1fa1b32b68307"
 });
 
+//количество игроков в комнатах. показывает при загрузке
+async function update_room_quick_stat() {
+
+	
+	
+	//считываем текущее время
+	console.time();
+	await firebase.database().ref("server_time").set(firebase.database.ServerValue.TIMESTAMP);
+	let _cur_ts = await firebase.database().ref("server_time").once('value');
+	console.timeEnd();
+	
+
+	firebase.database().ref('states').once('value').then((snapshot) => {
+		document.getElementById("but_ref1").textContent = Object.keys(snapshot.val()).length;
+	})
+	
+	firebase.database().ref('states2').once('value').then((snapshot) => {
+		document.getElementById("but_ref2").textContent = Object.keys(snapshot.val()).length;
+	})
+}
 
 //ВСЕ ИГРОКИ С ОПРЕДЕЛЕННОГО ВРЕМЕНИ
 function all_players() {
@@ -520,5 +546,3 @@ var my_table = {
 	
 </script>
 
-</body>
-</html>
