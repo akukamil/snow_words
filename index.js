@@ -3410,7 +3410,7 @@ async function load_user_data() {
 		
 		
 
-		if (my_data.rating > 1430)
+		if (my_data.rating > 9430)
 			room_name = 'states2'
 		else
 			room_name = 'states'
