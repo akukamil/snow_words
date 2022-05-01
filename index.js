@@ -1596,7 +1596,7 @@ var game = {
 		
 		for (let i = 0 ; i < 100 ; i++) {
 						
-			let block0='ОЕАИНТСРВЛКМДПГЗБ';				
+			let block0='ОЕАИНТСРВЛКМДПГЗБУЯ';				
 			let new_let = block0[irnd(0,block0.length-1)];		
 			let already_have = 0;
 			for (let l_b of objects.l_buttons) {				
@@ -1677,6 +1677,20 @@ var game = {
 			return;
 		}
 		
+		//третья новая буква
+		if (objects.l_buttons[8].visible === false) {
+			
+			objects.l_buttons[8].set_letter(new_let);		
+			objects.l_buttons[8].x = 505;
+			anim2.add(objects.l_buttons[8],{y:[450,300]}, true, 0.5,'easeOutCubic');			
+			
+			anim2.add(objects.l_buttons[0],{x:[objects.l_buttons[0].x,objects.l_buttons[0].x-35]}, true, 0.5,'linear');	
+			anim2.add(objects.l_buttons[1],{x:[objects.l_buttons[1].x,objects.l_buttons[1].x-35]}, true, 0.5,'linear');	
+			anim2.add(objects.l_buttons[2],{x:[objects.l_buttons[2].x,objects.l_buttons[2].x-35]}, true, 0.5,'linear');	
+			anim2.add(objects.l_buttons[6],{x:[objects.l_buttons[6].x,objects.l_buttons[6].x-35]}, true, 0.5,'linear');	
+			main_word_conf[0] = 5;
+			return;
+		}
 
 		
 	}
