@@ -162,11 +162,15 @@ async function update_room_quick_stat() {
 	
 
 	firebase.database().ref('states').once('value').then((snapshot) => {
-		document.getElementById("but_ref1").textContent = Object.keys(snapshot.val()).length;
+		let data = snapshot.val();
+		if (data === null) return;
+		document.getElementById("but_ref1").textContent = Object.keys(data).length;
 	})
 	
 	firebase.database().ref('states2').once('value').then((snapshot) => {
-		document.getElementById("but_ref2").textContent = Object.keys(snapshot.val()).length;
+		let data = snapshot.val();
+		if (data === null) return;
+		document.getElementById("but_ref2").textContent = Object.keys(data).length;
 	})
 }
 
@@ -362,7 +366,7 @@ async function states_room(room) {
 		
 		document.body.innerHTML = i +' / ' + uids.length;
 		let data2=snapshot2.val();
-		let last_seen = new Date(data2.tm).toLocaleString();
+		let last_seen = new Date(data2.tm || 0).toLocaleString();
 		let games = data2.games;
 		let money = data2.money
 		let state = data[uids[i]].state;
