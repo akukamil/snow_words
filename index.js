@@ -811,21 +811,12 @@ var get_random_word = function() {
 	let block1='НТСРВЛКМДП';
 	let block2='УЯЫЬГЗБЧЙХЖШЮ';
 	
-	block0_shuffled = block0.split('').sort(function(){return 0.5-Math.random()}).join('');
-	block1_shuffled = block1.split('').sort(function(){return 0.5-Math.random()}).join('');
-	block2_shuffled = block2.split('').sort(function(){return 0.5-Math.random()}).join('');
-	
-	let word_len = main_word_conf[0] + main_word_conf[1];
-	
+	let block0_shuffled = block0.split('').sort(function(){return 0.5-Math.random()}).join('');
+	let block1_shuffled = block1.split('').sort(function(){return 0.5-Math.random()}).join('');
+	let block2_shuffled = block2.split('').sort(function(){return 0.5-Math.random()}).join('');
+		
 	let _word = block0_shuffled[0] + block0_shuffled[1] + block1_shuffled[0] + block1_shuffled[1] + block1_shuffled[2] + block2_shuffled[0];
-	
-	if (word_len > 6)
-		_word += block2_shuffled[1];
-	
-	if (word_len > 7)
-		_word += block2_shuffled[2];
-	
-	
+		
 	_word = _word.split('').sort(function(){return 0.5-Math.random()}).join('');
 	return _word;
 	
