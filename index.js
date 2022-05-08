@@ -974,8 +974,7 @@ var game = {
 	shift_vs_amount : [0,1,1,1,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
 	
 	activate: async function(role, opponent) {
-
-					
+		
 		//устанавливаем роль
 		my_role = role;
 					
@@ -1106,10 +1105,17 @@ var game = {
 	},
 	
 	update_opp_skin_id : async function () {
+				
 		
 		//считываем и обновляем скин соперника
 		let _skin_id = await firebase.database().ref("players/"+opp_data.uid +"/skin_id").once('value');
-		opp_data.skin_id = _skin_id.val() || 0;
+		_skin_id = _skin_id.val();
+		
+		//если такого скина нет
+		if (gres['idle' + _skin_id] === undefined)
+			return;
+		
+		opp_data.skin_id = _skin_id;
 		this.set_player_state(objects.opp_icon, objects.opp_icon.state);
 
 	},
