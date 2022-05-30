@@ -1023,12 +1023,13 @@ var game = {
 		//показываем карточки игроков		
 		objects.my_card_cont.visible = true;
 		objects.opp_card_cont.visible = true;		
-		
-		
+				
 		objects.cur_word.visible = true;	
-		objects.all_words.visible = true;		
+		
+		
+		objects.my_words.visible = objects.opp_words.visible = true;	
+		objects.my_words.text = objects.opp_words.text = '';	
 		objects.cur_word.text = '';	
-		objects.all_words.text = '';	
 		
 		this.my_sink = this.opp_sink = 0;
 		this.word_hist=[];
@@ -1158,7 +1159,8 @@ var game = {
 		objects.opp_card_cont.visible=false;
 		objects.my_card_cont.visible=false;
 		objects.cur_word.visible = false;	
-		objects.all_words.visible = false;	
+		objects.my_words.visible = false;	
+		objects.opp_words.visible = false;	
 		objects.sea.sprite.visible = false;	
 		objects.confirm_buttons_cont.visible = false;	
 
@@ -1245,7 +1247,7 @@ var game = {
 		
 		//Все нормально
 		this.word_hist.push(objects.cur_word.text)
-		objects.all_words.text += objects.cur_word.text +' ';			
+		objects.my_words.text += objects.cur_word.text +' ';			
 		this.turn_word_to_bullets(objects.cur_word.text, OPP, game_id);
 		this.opponent.send_move(objects.cur_word.text);
 		objects.cur_word.text ='';	
@@ -1617,7 +1619,7 @@ var game = {
 			return;
 		
 		this.word_hist.push(word)
-		objects.all_words.text += word +' ';			
+		objects.opp_words.text += word +' ';			
 		
 		
 	},
