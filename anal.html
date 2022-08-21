@@ -365,7 +365,7 @@ async function states_room(room) {
 
 		let data2=snapshot2.val();	
 		if (data2 === null) {
-			firebase.database().ref("room/" + uids[i]).remove();
+			firebase.database().ref(room + "/" + uids[i]).remove();
 			alert('Удалил из комнаты '+uids[i])
 			continue
 		}
