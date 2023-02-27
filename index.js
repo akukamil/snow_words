@@ -2872,7 +2872,7 @@ var cards_menu = {
 	send_invite: function() {
 
 
-		if (objects.invite_cont.ready === false || 	objects.big_message_cont.visible === true ||objects.req_cont.visible === true)	{
+		if (objects.invite_cont.ready === false || objects.invite_header6.text==='Ждем ответ...'||objects.big_message_cont.visible === true ||objects.req_cont.visible === true)	{
 			gres.locked.sound.play();
 			return
 		}
