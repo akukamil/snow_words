@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app, game_res, objects={}, state="o",git_src, my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
+var app ={stage:{},renderer:{}}, game_res, objects={}, state="o",git_src, my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
 var players="", pending_player="", room_name = 'states2';
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
@@ -3406,9 +3406,12 @@ async function init_game_env() {
 	}
 
 	
-	app = new PIXI.Application({width:M_WIDTH, height:M_HEIGHT,antialias:false});
-	document.body.appendChild(app.view);
-
+	app.stage = new PIXI.Container();
+	app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});
+	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
+	document.body.style.backgroundColor = 'rgb(141,211,200)';
+	
+	
 	resize();
 	window.addEventListener("resize", resize);
 
@@ -3553,7 +3556,7 @@ function main_loop() {
 	for (let key in some_process)
 		some_process[key]();
 
-
+	app.renderer.render(app.stage);	
 	requestAnimationFrame(main_loop);
 }
 
