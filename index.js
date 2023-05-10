@@ -1,14 +1,13 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app, game_res, game, objects={}, state="o",my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
+var app, game_res, objects={}, state="o",git_src, my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
 var players="", pending_player="", room_name = 'states2';
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
+var dict={};
 const ME = 0, OPP = 1;
 let main_word_conf = [3,3];
 const WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2;
 const IDLE =0, HITED = 1, SINKING = 2, THROWING = 3, FALLING = 4;
-
-var rus_let =  ['А','Б','В','Г','Д','Е','Ж','З','И','К','Л','М','Н','О','П','Р','С','Т','У','Ф','Х','Ц','Ч','Ш','Щ','Ь','Ю','Я'];
 
 irnd = function (min,max) {	
 	//мин и макс включительно
@@ -36,7 +35,9 @@ class player_mini_card_class extends PIXI.Container {
 		this.bcg.pointerdown=function(){cards_menu.card_down(id)};
 		this.bcg.pointerover=function(){this.bcg.alpha=0.5;}.bind(this);
 		this.bcg.pointerout=function(){this.bcg.alpha=1;}.bind(this);
-
+		this.bcg.width=200;
+		this.bcg.height=100;
+		
 		this.avatar=new PIXI.Sprite();
 		this.avatar.x=20;
 		this.avatar.y=20;
@@ -81,7 +82,8 @@ class player_mini_card_class extends PIXI.Container {
 		
 		//
 		this.rating_bcg = new PIXI.Sprite(game_res.resources.rating_bcg.texture);
-
+		this.rating_bcg.width=200;
+		this.rating_bcg.height=100;
 		
 		this.name1="";
 		this.name2="";
@@ -100,7 +102,8 @@ class lb_player_card_class extends PIXI.Container{
 		this.bcg.interactive=true;
 		this.bcg.pointerover=function(){this.tint=0x55ffff};
 		this.bcg.pointerout=function(){this.tint=0xffffff};
-
+		this.bcg.width = 370;
+		this.bcg.height = 70;
 
 		this.place=new PIXI.BitmapText("", {fontName: 'mfont',fontSize: 25});
 		this.place.tint=0xffff00;
@@ -142,6 +145,8 @@ class letter_button_class extends PIXI.Container{
 		this.bcg.pointerover=function(){this.tint=0x9999ff};
 		this.bcg.pointerout=function(){this.tint=0xffffff};
 		this.bcg.pointerdown=game.letter_down.bind(game,this);
+		this.bcg.width=this.bcg.height=80;
+		
 		
 		this.l=new PIXI.BitmapText(this.letter, {fontName: 'mfont',fontSize: 60});
 		this.l.tint=0xffffff;
@@ -177,7 +182,7 @@ class snowball_class extends PIXI.Container{
 		this.bcg.pointerout=function(){this.tint=0xffffff};
 		//this.bcg.pointerdown=game.letter_down.bind(game,this);
 		this.bcg.anchor.set(0.5,0.5);
-		
+		this.bcg.width=this.bcg.height=80;
 		
 		this.l=new PIXI.BitmapText(this.letter, {fontName: 'mfont',fontSize: 45});
 		this.l.tint=0x2321fe;
@@ -211,10 +216,13 @@ class shop_card_class extends PIXI.Container {
 		this.bcg.pointerover=function(){this.tint=0x9999ff};
 		this.bcg.pointerout=function(){this.tint=0xffffff};
 		this.bcg.pointerdown=shop.card_down.bind(this);
+		this.bcg.width=150;
+		this.bcg.height=200;
 		
 		this.skin_id = skin_id;
 		this.skin_avatar = new PIXI.Sprite(gres['idle'+skin_id].texture);
 		this.skin_avatar.x = this.skin_avatar.y = 35;
+		this.skin_avatar.width=this.skin_avatar.height=80;
 		
 		this.price = price;
 		this.price_text = new PIXI.BitmapText('Цена: ' + price, {fontName: 'mfont',fontSize: 30});
@@ -804,16 +812,16 @@ var shuffle_array = function(a) {
     return a;
 }
 
-var get_random_word = function() {
+function get_random_word() {
 	
+	let letters_blocks=['ОЕАИ','НТСРВЛКМДП','УЯЫЬГЗБЧЙХЖШЮ'];	
+	if(LANG===1)
+		letters_blocks=['EAIO','RTNSLCUDPM','HGBFYWKVXZJQ'];	
+
 	
-	let block0='ОЕАИ';
-	let block1='НТСРВЛКМДП';
-	let block2='УЯЫЬГЗБЧЙХЖШЮ';
-	
-	let block0_shuffled = block0.split('').sort(function(){return 0.5-Math.random()}).join('');
-	let block1_shuffled = block1.split('').sort(function(){return 0.5-Math.random()}).join('');
-	let block2_shuffled = block2.split('').sort(function(){return 0.5-Math.random()}).join('');
+	const block0_shuffled = letters_blocks[0].split('').sort(function(){return 0.5-Math.random()}).join('');
+	const block1_shuffled = letters_blocks[1].split('').sort(function(){return 0.5-Math.random()}).join('');
+	const block2_shuffled = letters_blocks[2].split('').sort(function(){return 0.5-Math.random()}).join('');
 		
 	let _word = block0_shuffled[0] + block0_shuffled[1] + block1_shuffled[0] + block1_shuffled[1] + block1_shuffled[2] + block2_shuffled[0];
 		
@@ -831,8 +839,7 @@ var bot_player = {
 	
 	activate : function() {	
 
-		set_state({state : 'b'});
-		
+		set_state({state : 'b'});		
 		
 		game_id=~~(Math.random()*99999);
 
@@ -888,7 +895,7 @@ var bot_player = {
 		}
 		
 		//если слово есть в словаре то запускаем пули
-		if (game.word_hist.includes(word5)===false && rus_dict0.includes(word5)===true) {			
+		if (game.word_hist.includes(word5)===false && dict0.includes(word5)===true) {			
 			game.receive_move(word5);			
 			this.last_word_time = game_tick;
 			return;
@@ -896,7 +903,7 @@ var bot_player = {
 		
 		let word4 = word5.substring(0,4);
 		//если слово есть в словаре то запускаем пули
-		if (game.word_hist.includes(word4)===false && rus_dict0.includes(word4)===true) {			
+		if (game.word_hist.includes(word4)===false && dict0.includes(word4)===true) {			
 			game.receive_move(word4);			
 			this.last_word_time = game_tick;
 			return;
@@ -904,7 +911,7 @@ var bot_player = {
 		
 		let word3 = word5.substring(0,3);
 		//если слово есть в словаре то запускаем пули
-		if (game.word_hist.includes(word3)===false && rus_dict0.includes(word3)===true) {			
+		if (game.word_hist.includes(word3)===false && dict0.includes(word3)===true) {			
 			game.receive_move(word3);			
 			this.last_word_time = game_tick;
 			return;
@@ -918,7 +925,7 @@ var bot_player = {
 		
 		gres.draw.sound.play();
 		some_process.bot = function(){};
-		await big_message.show('Игра с ботом завершена!','Сыграйте с реальным соперником для получения рейтинга');
+		await big_message.show(['Игра с ботом завершена!','Сыграйте с реальным соперником для получения рейтинга','The bot game is over! Play with a real opponent to get a rating'][LANG]);
 	},
 	
 	send_move : function() {
@@ -1132,7 +1139,7 @@ var game = {
 				return;			
 			}
 			
-			let conf = await confirm_dialog.show("Уверены?");
+			let conf = await confirm_dialog.show(['Уверены?','Exit?'][LANG]);
 			if (conf === 'no')
 				return;			
 		}
@@ -1235,13 +1242,13 @@ var game = {
 		
 		if (this.word_hist.includes(objects.cur_word.text) === true) {
 			objects.cur_word.text ='';	
-			message.add("Это слово уже называли!")
+			message.add(['Это слово уже назвали!','This word has already been called!'][LANG])
 			return;
 		}
 		
-		if (rus_dict0.includes(objects.cur_word.text)===false && rus_dict1.includes(objects.cur_word.text)===false) {
+		if (dict0.includes(objects.cur_word.text)===false && dict1.includes(objects.cur_word.text)===false) {
 			objects.cur_word.text ='';	
-			message.add("Я не знаю такого слова!")
+			message.add(['Я не знаю такого слова!','I do not know such a word!'][LANG])
 			return;	
 		}
 		
@@ -1593,9 +1600,12 @@ var game = {
 	
 	get_new_letter : function() {
 		
+		let block0='ОЕАИНТСРВЛКМДПГЗБУЯ';	
+		if(LANG===1)
+			block0='EARIOTNSLCUDPMHGBFYWKVXZJQ';	
+		
 		for (let i = 0 ; i < 100 ; i++) {
-						
-			let block0='ОЕАИНТСРВЛКМДПГЗБУЯ';				
+					
 			let new_let = block0[irnd(0,block0.length-1)];		
 			let already_have = 0;
 			for (let l_b of objects.l_buttons) {				
@@ -2123,7 +2133,7 @@ var shop = {
 			return;
 		
 		if (this.price > my_data.money) {
-			message.add('Недостаточно мороженок (((');
+			message.add(['Недостаточно мороженок (((','Not enough icecream((('][LANG]);
 			return;
 		}
 		
@@ -2132,7 +2142,7 @@ var shop = {
 			return;
 		}
 		
-		let res = await confirm_dialog.show('Точно хотите купить?');
+		let res = await confirm_dialog.show(['Точно хотите купить?','Sure?'][LANG]);
 		if (res === 'no')
 			return;
 		
@@ -2178,7 +2188,7 @@ var lb = {
 
 		objects.desktop.visible=true;
 		objects.desktop.texture=game_res.resources.lb_bcg.texture;
-		objects.lb_header6.visible=true;
+
 		
 		anim2.add(objects.lb_1_cont,{x:[-150, objects.lb_1_cont.sx]}, true, 1,'easeOutBack');
 		anim2.add(objects.lb_2_cont,{x:[-150, objects.lb_2_cont.sx]}, true, 1,'easeOutBack');
@@ -2208,7 +2218,7 @@ var lb = {
 		objects.lb_3_cont.visible=false;
 		objects.lb_cards_cont.visible=false;
 		objects.lb_back_button.visible=false;
-		objects.lb_header6.visible=false;
+
 
 	},
 
@@ -2318,7 +2328,7 @@ var cards_menu = {
 
 		objects.header4.visible=true;
 		objects.desktop.texture=gres.desktop2.texture;
-		objects.desktop.alpha=0.4;
+		objects.desktop.alpha=0.6;
 
 		//расставляем по соответствующим координатам
 		for(let i=0;i<15;i++) {
@@ -2734,7 +2744,7 @@ var cards_menu = {
 		objects.mini_cards[0].bcg.texture=gres.mpc_ai.texture;
 		objects.mini_cards[0].visible=true;
 		objects.mini_cards[0].uid="AI";
-		objects.mini_cards[0].name="Бот";
+		objects.mini_cards[0].name=['Бот','Bot'][LANG];
 		objects.mini_cards[0].name_text.text=['Бот','Bot'][LANG];
 		objects.mini_cards[0].rating_text.text='1400';
 		objects.mini_cards[0].rating=1400;
@@ -2944,374 +2954,188 @@ var cards_menu = {
 
 }
 
-var auth = function() {
-	
-	return new Promise((resolve, reject)=>{
-
-		let help_obj = {
-
-			loadScript : function(src) {
-			  return new Promise((resolve, reject) => {
-				const script = document.createElement('script')
-				script.type = 'text/javascript'
-				script.onload = resolve
-				script.onerror = reject
-				script.src = src
-				document.head.appendChild(script)
-			  })
-			},
-
-			vkbridge_events: function(e) {
-
-				if (e.detail.type === 'VKWebAppGetUserInfoResult') {
-
-					my_data.name 	= e.detail.data.first_name + ' ' + e.detail.data.last_name;
-					my_data.uid 	= "vk"+e.detail.data.id;
-					my_data.pic_url = e.detail.data.photo_100;
-
-					//console.log(`Получены данные игрока от VB MINIAPP:\nимя:${my_data.name}\nid:${my_data.uid}\npic_url:${my_data.pic_url}`);
-					help_obj.process_results();
-				}
-			},
-
-			init: function() {
-
-				let s = window.location.href;
-
-				//-----------ЯНДЕКС------------------------------------
-				if (s.includes("yandex")) {
-					Promise.all([
-						this.loadScript('https://yandex.ru/games/sdk/v2')
-					]).then(function(){
-						help_obj.yandex();
-					});
-					return;
-				}
-
-
-				//-----------ВКОНТАКТЕ------------------------------------
-				if (s.includes("vk.com")) {
-					Promise.all([
-						this.loadScript('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')
-
-					]).then(function(){
-						help_obj.vk()
-					});
-					return;
-				}
-
-
-				//-----------CRAZYGAMES------------------------------------
-				if (s.includes("crazygames")) {
-					console.log("обнаружена платформа crazygames")
-					Promise.all([
-						this.loadScript('https://sdk.crazygames.com/crazygames-sdk-v1.js')
-
-					]).then(function(){
-						help_obj.crazygames();
-					});
-					return;
-				}
-
-				//-----------ЛОКАЛЬНЫЙ СЕРВЕР--------------------------------
-				if (s.includes("192.168")) {
-					help_obj.debug();
-					return;
-				}
-
-
-				//-----------НЕИЗВЕСТНОЕ ОКРУЖЕНИЕ---------------------------
-				help_obj.unknown();
-
-			},
+auth2 = {
+		
+	load_script (src) {
+	  return new Promise((resolve, reject) => {
+		const script = document.createElement('script')
+		script.type = 'text/javascript'
+		script.onload = resolve
+		script.onerror = reject
+		script.src = src
+		document.head.appendChild(script)
+	  })
+	},
 			
-			get_random_name : function(e_str) {
-				
-				let rnd_names = ['Gamma','Жираф','Зебра','Тигр','Ослик','Мамонт','Волк','Лиса','Мышь','Сова','Hot','Енот','Кролик','Бизон','Super','ZigZag','Magik','Alpha','Beta','Foxy','Fazer','King','Kid','Rock'];
-				let chars = '+0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-				if (e_str !== undefined) {
-					
-					let e_num1 = chars.indexOf(e_str[0]) + chars.indexOf(e_str[1]) + chars.indexOf(e_str[2]) +	chars.indexOf(e_str[3]);
-					e_num1 = Math.abs(e_num1) % (rnd_names.length - 1);					
-					let e_num2 = chars.indexOf(e_str[4]).toString()  + chars.indexOf(e_str[5]).toString()  + chars.indexOf(e_str[6]).toString() ;	
-					e_num2 = e_num2.substring(0, 3);
-					return rnd_names[e_num1] + e_num2;					
-					
-				} else {
-
-					let rnd_num = irnd(0, rnd_names.length - 1);
-					let rand_uid = irnd(0, 999999)+ 100;
-					let name_postfix = rand_uid.toString().substring(0, 3);
-					let name =	rnd_names[rnd_num] + name_postfix;				
-					return name;
-				}						
-			},	
-			
-			get_random_name2 : function(e_str) {
-				
-				let rnd_names = ['Crazy','Monkey','Sky','Mad','Doom','Hash'];
-				let chars = '+0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-				if (e_str !== undefined) {
-					
-					let e_num1 = chars.indexOf(e_str[0]) + chars.indexOf(e_str[1]) + chars.indexOf(e_str[2]) +	chars.indexOf(e_str[3]);
-					e_num1 = Math.abs(e_num1) % (rnd_names.length - 1);					
-					let e_num2 = chars.indexOf(e_str[4]).toString()  + chars.indexOf(e_str[5]).toString()  + chars.indexOf(e_str[6]).toString() ;	
-					e_num2 = e_num2.substring(0, 3);
-					return rnd_names[e_num1] + e_num2;					
-					
-				} else {
-
-					let rnd_num = irnd(0, rnd_names.length - 1);
-					let rand_uid = irnd(0, 999999)+ 100;
-					let name_postfix = rand_uid.toString().substring(0, 3);
-					let name =	rnd_names[rnd_num] + name_postfix;				
-					return name;
-				}						
-			},	
-
-			yandex: function() {
-
-				game_platform="YANDEX";
-				if(typeof(YaGames)==='undefined')
-				{
-					help_obj.local();
-				}
-				else
-				{
-					//если sdk яндекса найден
-					YaGames.init({}).then(ysdk => {
-
-						//фиксируем SDK в глобальной переменной
-						window.ysdk=ysdk;
-
-						//запрашиваем данные игрока
-						return ysdk.getPlayer();
-
-
-					}).then((_player)=>{
-
-						my_data.name 	= _player.getName();
-						my_data.uid 	= _player.getUniqueID().replace(/\//g, "Z");
-						my_data.pic_url = _player.getPhoto('medium');
-
-						//console.log(`Получены данные игрока от яндекса:\nимя:${my_data.name}\nid:${my_data.uid}\npic_url:${my_data.pic_url}`);
-
-						//если нет данных то создаем их
-						if (my_data.name=="" || my_data.name=='')
-							my_data.name = help_obj.get_random_name(my_data.uid);
-
-
-						help_obj.process_results();
-
-					}).catch((err)=>{
-
-						//загружаем из локального хранилища если нет авторизации в яндексе
-						help_obj.local();
-
-					})
-				}
-			},
-
-			vk: async function() {
-
-				game_platform="VK";
-				
-				let e={};
-				try {
-					await vkBridge.send('VKWebAppInit');
-					e = await vkBridge.send('VKWebAppGetUserInfo');
-				} catch (error) {
-					alert(error.stack)
-				}		
-
-				
-				my_data.name 	= e.first_name + ' ' + e.last_name;
-				my_data.uid 	= "vk"+e.id;
-				my_data.pic_url = e.photo_100;
-
-				help_obj.process_results();		
-					
-
-			},
-
-			crazygames : async function() {
-				
-				game_platform="CRAZYGAMES";
-				
-				//ищем в локальном хранилище
-				let local_uid = null;
-				try {
-					local_uid = localStorage.getItem('uid');
-				} catch (e) {
-					console.log(e);
-				}
-
-				//здесь создаем нового игрока в локальном хранилище
-				if (local_uid===undefined || local_uid===null) {
-
-					//console.log("Создаем нового локального пользователя");
-					let rnd_names=["Crazy","Monkey","Sky","Mad","Doom","Hash"];
-					
-					//console.log("Создаем нового локального пользователя");
-					let rand_uid=Math.floor(Math.random() * 9999999);
-					my_data.rating 		= 	1400;
-					my_data.uid			=	"cg"+rand_uid;
-					my_data.name 		=	 help_obj.get_random_name2(my_data.uid);					
-					my_data.pic_url		=	'https://avatars.dicebear.com/v2/male/'+irnd(10,10000)+'.svg';
-
-
-					try {
-						localStorage.setItem('uid',my_data.uid);
-					} catch (e) {
-						console.log(e);
-					}
-					
-					help_obj.process_results();
-				}
-				else
-				{
-					//console.log(`Нашли айди в ЛХ (${local_uid}). Загружаем остальное из ФБ...`);
-					
-					my_data.uid = local_uid;	
-					
-					//запрашиваем мою информацию из бд или заносим в бд новые данные если игрока нет в бд
-					firebase.database().ref("players/"+my_data.uid).once('value').then((snapshot) => {		
-									
-						var data=snapshot.val();
-						
-						//если на сервере нет таких данных
-						if (data === null) {
-													
-							alert('error 4099');
-							
-						} else {						
-							
-							my_data.pic_url = data.pic_url;
-							my_data.name = data.name;
-							help_obj.process_results();
-						}
-
-					})	
-
-				}			
+	get_random_char () {		
+		
+		const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+		return chars[irnd(0,chars.length-1)];
+		
+	},
 	
-			},
-
-			debug: function() {
-
-				game_platform = "debug";
-				let uid = prompt('Отладка. Введите ID', 100);
-
-				my_data.name = my_data.uid = "debug" + uid;
-				my_data.pic_url = "https://sun9-73.userapi.com/impf/c622324/v622324558/3cb82/RDsdJ1yXscg.jpg?size=223x339&quality=96&sign=fa6f8247608c200161d482326aa4723c&type=album";
-
-				help_obj.process_results();
-
-			},
-
-			local: function(repeat = 0) {
-
-				game_platform="YANDEX";
-
-				//ищем в локальном хранилище
-				let local_uid = null;
-				try {
-					local_uid = localStorage.getItem('uid');
-				} catch (e) {
-					console.log(e);
-				}
-
-				//здесь создаем нового игрока в локальном хранилище
-				if (local_uid===undefined || local_uid===null) {
-
-					//console.log("Создаем нового локального пользователя");
-					let rand_uid=Math.floor(Math.random() * 9999999);
-					my_data.rating 		= 	1400;
-					my_data.uid			=	"ls"+rand_uid;
-					my_data.name 		=	 help_obj.get_random_name(my_data.uid);					
-					my_data.pic_url		=	'https://avatars.dicebear.com/v2/male/'+irnd(10,10000)+'.svg';
-
-
-					try {
-						localStorage.setItem('uid',my_data.uid);
-					} catch (e) {
-						console.log(e);
-					}
+	get_random_uid_for_local(prefix) {
+		
+		let uid = prefix;
+		for ( let c = 0 ; c < 12 ; c++ )
+			uid += this.get_random_char();
+		
+		//сохраняем этот uid в локальном хранилище
+		try {
+			localStorage.setItem('poker_uid', uid);
+		} catch (e) {alert(e)}
 					
-					help_obj.process_results();
-				}
-				else
-				{
-					//console.log(`Нашли айди в ЛХ (${local_uid}). Загружаем остальное из ФБ...`);
-					
-					my_data.uid = local_uid;	
-					
-					//запрашиваем мою информацию из бд или заносим в бд новые данные если игрока нет в бд
-					firebase.database().ref("players/"+my_data.uid).once('value').then((snapshot) => {		
-									
-						var data=snapshot.val();
-						
-						//если на сервере нет таких данных
-						if (data === null) {
-													
-							//если повтоно нету данных то выводим предупреждение
-							if (repeat === 1)
-								alert('Какая-то ошибка');
-							
-							//console.log(`Нашли данные в ЛХ но не нашли в ФБ, повторный локальный запрос...`);	
+		return uid;
+		
+	},
+	
+	get_random_name(uid) {
+		
+		const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+		const rnd_names = ['Gamma','Chime','Dron','Perl','Onyx','Asti','Wolf','Roll','Lime','Cosy','Hot','Kent','Pony','Baker','Super','ZigZag','Magik','Alpha','Beta','Foxy','Fazer','King','Kid','Rock'];
+		
+		if (uid !== undefined) {
+			
+			let e_num1 = chars.indexOf(uid[3]) + chars.indexOf(uid[4]) + chars.indexOf(uid[5]) + chars.indexOf(uid[6]);
+			e_num1 = Math.abs(e_num1) % (rnd_names.length - 1);				
+			let name_postfix = chars.indexOf(uid[7]).toString() + chars.indexOf(uid[8]).toString() + chars.indexOf(uid[9]).toString() ;	
+			return rnd_names[e_num1] + name_postfix.substring(0, 3);					
+			
+		} else {
 
-							
-							//повторно запускаем локальный поиск						
-							localStorage.clear();
-							help_obj.local(1);	
-								
-							
-						} else {						
-							
-							my_data.pic_url = data.pic_url;
-							my_data.name = data.name;
-							help_obj.process_results();
-						}
+			let rnd_num = irnd(0, rnd_names.length - 1);
+			let rand_uid = irnd(0, 999999)+ 100;
+			let name_postfix = rand_uid.toString().substring(0, 3);
+			let name =	rnd_names[rnd_num] + name_postfix;				
+			return name;
+		}	
+	},	
+	
+	async get_country_code() {
+		
+		let country_code = ''
+		try {
+			let resp1 = await fetch("https://ipinfo.io/json");
+			let resp2 = await resp1.json();			
+			country_code = resp2.country;			
+		} catch(e){}
 
-					})	
-
-				}
-
-
-			},
-
-			unknown: function () {
-
-				game_platform="unknown";
-				alert("Неизвестная платформа! Кто Вы?")
-
-				//загружаем из локального хранилища
-				help_obj.local();
-			},
-
-			process_results: function() {
-
-
-				//отображаем итоговые данные
-				//console.log(`Итоговые данные:\nПлатформа:${game_platform}\nимя:${my_data.name}\nid:${my_data.uid}\npic_url:${my_data.pic_url}`);
-
-				//обновляем базовые данные в файербейс так могло что-то поменяться
-				firebase.database().ref("players/"+my_data.uid+"/name").set(my_data.name);
-				firebase.database().ref("players/"+my_data.uid+"/pic_url").set(my_data.pic_url);
+		return country_code;
+		
+	},
+	
+	search_in_local_storage () {
+		
+		//ищем в локальном хранилище
+		let local_uid = null;
+		
+		try {
+			local_uid = localStorage.getItem('poker_uid');
+		} catch (e) {alert(e)}
 				
+		if (local_uid !== null) return local_uid;
+		
+		return undefined;	
+		
+	},
+	
+	async search_in_crazygames(){
+		
+		const is_user_data = await window.CrazyGames.SDK.user.isUserAccountAvailable();
+		if (is_user_data===false) return {};
+		const user = await window.CrazyGames.SDK.user.getUser();
+		return user || {};
+	},
+	
+	async init() {	
+				
+		if (game_platform === 'YANDEX') {			
+		
+			try {await this.load_script('https://yandex.ru/games/sdk/v2')} catch (e) {alert(e)};										
+					
+			let _player;
+			
+			try {
+				window.ysdk = await YaGames.init({});			
+				_player = await window.ysdk.getPlayer();
+			} catch (e) { alert(e)};
+			
+			my_data.uid = _player.getUniqueID().replace(/[\/+=]/g, '');
+			my_data.name = _player.getName();
+			my_data.pic_url = _player.getPhoto('medium');
+			
+			if (my_data.pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
+				my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';
+			
+			if (my_data.name === '')
+				my_data.name = this.get_random_name(my_data.uid);
+			
+			//если английский яндекс до добавляем к имени страну
+			let country_code = await this.get_country_code();
+			my_data.name = my_data.name + ' (' + country_code + ')';			
 
-				//вызываем коллбэк
-				resolve("ok");
-			},
 
-			process : function () {
-
-			}
+			
+			return;
 		}
+		
+		if (game_platform === 'VK') {
+			
+			try {await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')} catch (e) {alert(e)};
+			
+			let _player;
+			
+			try {
+				await vkBridge.send('VKWebAppInit');
+				_player = await vkBridge.send('VKWebAppGetUserInfo');				
+			} catch (e) {alert(e)};
 
-		help_obj.init();
+			
+			my_data.name 	= _player.first_name + ' ' + _player.last_name;
+			my_data.uid 	= "vk"+_player.id;
+			my_data.pic_url = _player.photo_100;
+			
+			return;
+			
+		}
+		
+		if (game_platform === 'GOOGLE_PLAY') {	
 
-	});	
+			let country_code = await this.get_country_code();
+			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('GP_');
+			my_data.name = this.get_random_name(my_data.uid) + ' (' + country_code + ')';
+			my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';	
+			return;
+		}
+		
+		if (game_platform === 'DEBUG') {		
+
+			my_data.name = my_data.uid = 'debug' + prompt('Отладка. Введите ID', 100);
+			my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';		
+			return;
+		}
+		
+		if (game_platform === 'CRAZYGAMES') {
+			
+			let country_code = await this.get_country_code();
+			const cg_user_data=await this.search_in_crazygames();
+			
+			my_data.uid = cg_user_data.id || this.search_in_local_storage() || this.get_random_uid_for_local('CG_');
+			my_data.name = cg_user_data.username || this.get_random_name(my_data.uid) + ' (' + country_code + ')';
+			my_data.pic_url = cg_user_data.profilePictureUrl || ('https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg');	
+		
+			return;
+		}
+		
+		if (game_platform === 'UNKNOWN') {
+			
+			//если не нашли платформу
+			alert('Неизвестная платформа. Кто Вы?')
+			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('LS_');
+			my_data.name = this.get_random_name(my_data.uid);
+			my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';	
+		}
+	}
 	
 }
 
@@ -3375,7 +3199,7 @@ async function load_user_data() {
 		}
 	
 		//получаем данные об игроке из социальных сетей
-		await auth();
+		await auth2.init();
 			
 		//устанавлием имя на карточки
 		make_text(objects.id_name,my_data.name,150);
@@ -3394,25 +3218,29 @@ async function load_user_data() {
 		let data = snapshot.val();
 		
 		//делаем защиту от неопределенности
-		my_data.rating = data.rating || 1400;
-		my_data.games = data.games || 0;
-		my_data.skin_id = data.skin_id || 0;
-		my_data.money = data.money || 0;		
+		my_data.rating = (data && data.rating) || 1400;
+		my_data.games = (data && data.games) || 0;
+		my_data.skin_id = (data && data.skin_id) || 0;
+		my_data.money = (data && data.money)  || 0;		
 		
 		
 		//определяем последнее время посещения
-		let last_seen_ts = data.tm || 1000;
+		let last_seen_ts = (data && data.tm) || 1000;
 		
 
 		
 		check_daily_reward(last_seen_ts);
 		
 		
+		//две комнаты для английского  и русского языков
+		if (LANG===0){
+			await auth2.load_script(git_src+'/rus_dict.js');
+			room_name = 'states'			
+		} else {
+			await auth2.load_script(git_src+'/eng_dict.js');
+			room_name = 'states2'			
+		}
 
-		if (my_data.rating > 9430)
-			room_name = 'states2'
-		else
-			room_name = 'states'
 		
 			
 		//отключение от игры и удаление не нужного
@@ -3482,15 +3310,82 @@ function vis_change() {
 		
 }
 
+language_dialog = {
+	
+	p_resolve : {},
+	
+	show : function() {
+				
+		return new Promise(function(resolve, reject){
+
+
+			document.body.innerHTML='<style>		html,		body {		margin: 0;		padding: 0;		height: 100%;	}		body {		display: flex;		align-items: center;		justify-content: center;		background-color: rgba(24,24,64,1);		flex-direction: column	}		.two_buttons_area {	  width: 70%;	  height: 50%;	  margin: 20px 20px 0px 20px;	  display: flex;	  flex-direction: row;	}		.button {		margin: 5px 5px 5px 5px;		width: 50%;		height: 100%;		color:white;		display: block;		background-color: rgba(44,55,100,1);		font-size: 10vw;		padding: 0px;	}  	#m_progress {	  background: rgba(11,255,255,0.1);	  justify-content: flex-start;	  border-radius: 100px;	  align-items: center;	  position: relative;	  padding: 0 5px;	  display: none;	  height: 50px;	  width: 70%;	}	#m_bar {	  box-shadow: 0 10px 40px -10px #fff;	  border-radius: 100px;	  background: #fff;	  height: 70%;	  width: 0%;	}	</style><div id ="two_buttons" class="two_buttons_area">	<button class="button" id ="but_ref1" onclick="language_dialog.p_resolve(0)">RUS</button>	<button class="button" id ="but_ref2"  onclick="language_dialog.p_resolve(1)">ENG</button></div><div id="m_progress">  <div id="m_bar"></div></div>';
+			
+			language_dialog.p_resolve = resolve;	
+						
+		})
+		
+	}
+	
+}
+
+async function define_platform_and_language() {
+	
+	let s = window.location.href;
+	
+	if (s.includes('yandex')) {
+		
+		game_platform = 'YANDEX';
+		
+		if (s.match(/yandex\.ru|yandex\.by|yandex\.kg|yandex\.kz|yandex\.tj|yandex\.ua|yandex\.uz/))
+			LANG = 0;
+		else 
+			LANG = 1;		
+		return;
+	}
+	
+	if (s.includes('vk.com')) {
+		game_platform = 'VK';	
+		LANG = 0;	
+		return;
+	}
+	
+	if (s.includes('google_play')) {
+			
+		game_platform = 'GOOGLE_PLAY';	
+		LANG = await language_dialog.show();
+		return;
+	}	
+	
+	if (s.includes('crazygames')) {
+			
+		game_platform = 'CRAZYGAMES';	
+		LANG = 1;
+		return;
+	}
+	
+	if (s.includes('192.168')) {
+			
+		game_platform = 'DEBUG';	
+		LANG = await language_dialog.show();
+		return;	
+	}	
+	
+	game_platform = 'UNKNOWN';	
+	LANG = await language_dialog.show();
+	
+	
+
+}
+
 async function init_game_env() {
 	
+	await define_platform_and_language();
+	console.log(game_platform, LANG);
 	
 	//ждем когда загрузятся ресурсы
 	await load_resources();
 
-	//убираем загрузочные данные
-	document.getElementById("m_bar").outerHTML = "";
-	document.getElementById("m_progress").outerHTML = "";
 
 	//короткое обращение к ресурсам
 	gres=game_res.resources;
@@ -3523,7 +3418,7 @@ async function init_game_env() {
 
         switch (obj_class) {
         case "sprite":
-            objects[obj_name] = new PIXI.Sprite(game_res.resources[obj_name].texture);
+            objects[obj_name] = new PIXI.Sprite(gres[obj_name].texture);
             eval(load_list[i].code0);
             break;
 
@@ -3594,19 +3489,17 @@ async function init_game_env() {
 
 async function load_resources() {
 	
-	//это нужно удалить потом
-	/*document.body.innerHTML = "Привет!\nДобавляем в игру некоторые улучшения))\nЗайдите через 40 минут.";
-	document.body.style.fontSize="24px";
-	document.body.style.color = "red";
-	return;*/
+	//отображаем шкалу загрузки
+	document.body.innerHTML='<style>html,body {margin: 0;padding: 0;height: 100%;	}body {display: flex;align-items: center;justify-content: center;background-color: rgba(41,41,41,1);flex-direction: column	}#m_progress {	  background: #1a1a1a;	  justify-content: flex-start;	  border-radius: 5px;	  align-items: center;	  position: relative;	  padding: 0 5px;	  display: none;	  height: 50px;	  width: 70%;	}	#m_bar {	  box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset;	  border-radius: 5px;	  background: rgb(119, 119, 119);	  height: 70%;	  width: 0%;	}	</style></div><div id="m_progress">  <div id="m_bar"></div></div>';
+		
+	git_src='https://akukamil.github.io/snow_words'
+	git_src=''
 
-
-	let git_src="https://akukamil.github.io/snow_words"
-	//let git_src=""
-
-
+	//подпапка с ресурсами
+	let lang_pack = ['RUS','ENG'][LANG];
+	
 	game_res=new PIXI.Loader();
-	game_res.add("m2_font", git_src+"/fonts/Neucha/font.fnt");
+	game_res.add('m2_font', git_src+'/fonts/Neucha/font.fnt');
 
 
 	game_res.add('click',git_src+'/sounds/click.mp3');
@@ -3628,19 +3521,23 @@ async function load_resources() {
 	game_res.add('letter_erase',git_src+'/sounds/letter_erase.mp3');
 	game_res.add('falling',git_src+'/sounds/falling.mp3');
 	game_res.add('hero_sink',git_src+'/sounds/sink.mp3')
+	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++)
-        if (load_list[i].class === "sprite" || load_list[i].class === "image" )
-            game_res.add(load_list[i].name, git_src+"/res/" + load_list[i].name + "." +  load_list[i].image_format);		
+        if (load_list[i].class === 'sprite' || load_list[i].class === 'image' )
+            game_res.add(load_list[i].name, git_src+'/res/'+lang_pack+'/'+load_list[i].name + '.' +  load_list[i].image_format);		
 
 	game_res.onProgress.add(progress);
 	function progress(loader, resource) {
-		document.getElementById("m_bar").style.width =  Math.round(loader.progress)+"%";
+		document.getElementById('m_bar').style.width =  Math.round(loader.progress)+'%';
 	}
 	
 	
 	await new Promise((resolve, reject)=> game_res.load(resolve))
-
+	
+	
+	//убираем элементы загрузки
+	document.getElementById("m_progress").outerHTML = '';	
 }
 
 function main_loop() {
