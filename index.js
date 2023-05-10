@@ -1159,6 +1159,10 @@ var game = {
 		if (objects.confirm_cont.visible === true && objects.confirm_cont.ready === true )
 			anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.y,-300]}, false, 1,'easeInOutCubic');		
 				
+				
+		if (game_platform === 'CRAZYGAMES' && result==='my_win')
+			window.CrazyGames.SDK.game.happytime();
+				
 		//сначала завершаем все что связано с оппонентом
 		await this.opponent.stop(result);		
 						
