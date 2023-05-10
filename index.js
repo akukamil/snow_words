@@ -1372,7 +1372,7 @@ var game = {
 		gres.falling.sound.play();
 		
 		objects.shark.x = 815;
-		objects.shark.scale.x = -1;
+		objects.shark.scale.x = -0.666;
 		objects.shark.texture  = gres.shark.texture;		
 		
 		this.set_player_state(objects.opp_icon, FALLING);		
@@ -1402,7 +1402,7 @@ var game = {
 
 		gres.falling.sound.play();
 			
-		objects.shark.scale.x = 1;
+		objects.shark.scale.x = 0.6666;
 		objects.shark.texture  = gres.shark.texture;
 		objects.shark.x = -5;
 		
