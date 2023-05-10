@@ -1189,7 +1189,7 @@ var game = {
 		set_state({state : 'o'});
 						
 		//показыаем рекламу		
-		await show_ad();
+		await ad.show();
 		
 		main_menu.activate();
 		
@@ -1916,29 +1916,78 @@ var req_dialog = {
 
 }
 
-var	show_ad = async function(){
+var	ad = {
+			
+	show : async function() {
 		
-	if (game_platform==="YANDEX") {		
-		//показываем рекламу
-		window.ysdk.adv.showFullscreenAdv({
-		  callbacks: {
-			onClose: function() {}, 
-			onError: function() {}
-					}
-		})
+		if (game_platform==="YANDEX") {			
+			//показываем рекламу
+			window.ysdk.adv.showFullscreenAdv({
+			  callbacks: {
+				onClose: function() {}, 
+				onError: function() {}
+						}
+			})
+		}
+		
+		if (game_platform==="VK") {
+					 
+			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"});	
+		}		
 
-	}
+		if (game_platform==="MY_GAMES") {
+					 
+			my_games_api.showAds({interstitial:true});
+		}			
+		
+		if (game_platform==='CRAZYGAMES') {
+			const callbacks = {
+				adFinished: () => console.log("End midgame ad (callback)"),
+				adError: (error) => console.log("Error midgame ad (callback)", error),
+				adStarted: () => console.log("Start midgame ad (callback)"),
+			};
+			window.CrazyGames.SDK.ad.requestAd("midgame", callbacks);		
+		}
+		
+		
+	},
 	
-	if (game_platform==="VK") {				
-		try {
-			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"});			
-		} catch (e) {			
-			console.error(e);
+	show2 : async function() {
+		
+		
+		if (game_platform ==="YANDEX") {
+			
+			let res = await new Promise(function(resolve, reject){				
+				window.ysdk.adv.showRewardedVideo({
+						callbacks: {
+						  onOpen: () => {},
+						  onRewarded: () => {resolve('ok')},
+						  onClose: () => {resolve('err')}, 
+						  onError: (e) => {resolve('err')}
+					}
+				})
+			
+			})
+			return res;
+		}
+		
+		if (game_platform === "VK") {	
+
+			let res = '';
+			try {
+				res = await vkBridge.send("VKWebAppShowNativeAds", { ad_format: "reward" })
+			}
+			catch(error) {
+				res ='err';
+			}
+			
+			return res;				
+			
 		}	
+		
+		return 'err';
+		
 	}
-		
-		
-	
 }
 
 var social_dialog = {
