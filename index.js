@@ -925,7 +925,7 @@ var bot_player = {
 		
 		gres.draw.sound.play();
 		some_process.bot = function(){};
-		await big_message.show(['Игра с ботом завершена!','Сыграйте с реальным соперником для получения рейтинга','The bot game is over! Play with a real opponent to get a rating'][LANG]);
+		await big_message.show(['Игра с ботом завершена!','The bot game is over!'][LANG],['Сыграйте с реальным соперником для получения рейтинга','Play with a real opponent to get a rating'][LANG]);
 	},
 	
 	send_move : function() {
@@ -3409,7 +3409,7 @@ async function init_game_env() {
 	app.stage = new PIXI.Container();
 	app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});
 	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
-	document.body.style.backgroundColor = 'rgb(141,211,200)';
+	document.body.style.backgroundColor = 'rgb(1,211,200)';
 	
 	
 	resize();
