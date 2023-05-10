@@ -225,7 +225,7 @@ class shop_card_class extends PIXI.Container {
 		this.skin_avatar.width=this.skin_avatar.height=80;
 		
 		this.price = price;
-		this.price_text = new PIXI.BitmapText('Цена: ' + price, {fontName: 'mfont',fontSize: 30});
+		this.price_text = new PIXI.BitmapText(['Цена: ','Price: '][LANG] + price, {fontName: 'mfont',fontSize: 30});
 		this.price_text.y=150;
 		this.price_text.x=75;
 		this.price_text.anchor.set(0.5,0.5);
@@ -2138,7 +2138,7 @@ var shop = {
 		}
 		
 		if (my_data.skin_id === this.skin_id) {
-			message.add('У вас уже есть этот скин!!!');
+			message.add(['У вас уже есть этот скин!!!','You already have this skin'][LANG]);
 			return;
 		}
 		
@@ -2152,7 +2152,7 @@ var shop = {
 		firebase.database().ref("players/"+my_data.uid+"/skin_id").set(this.skin_id);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
 		my_data.skin_id = this.skin_id;
-		message.add('Вы купили новый скин )))')
+		message.add(['Вы купили новый скин )))','You bought a new skin)))'][LANG])
 		game.set_player_state(objects.my_icon, objects.my_icon.state);
 		
 		console.log(this.price)
@@ -2328,7 +2328,7 @@ var cards_menu = {
 
 		objects.header4.visible=true;
 		objects.desktop.texture=gres.desktop2.texture;
-		objects.desktop.alpha=0.6;
+		//objects.desktop.alpha=0.6;
 
 		//расставляем по соответствующим координатам
 		for(let i=0;i<15;i++) {
@@ -3496,6 +3496,7 @@ async function load_resources() {
 	
 	//отображаем шкалу загрузки
 	document.body.innerHTML='<style>html,body {margin: 0;padding: 0;height: 100%;	}body {display: flex;align-items: center;justify-content: center;background-color: rgba(41,41,41,1);flex-direction: column	}#m_progress {	  background: #1a1a1a;	  justify-content: flex-start;	  border-radius: 5px;	  align-items: center;	  position: relative;	  padding: 0 5px;	  display: none;	  height: 50px;	  width: 70%;	}	#m_bar {	  box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset;	  border-radius: 5px;	  background: rgb(119, 119, 119);	  height: 70%;	  width: 0%;	}	</style></div><div id="m_progress">  <div id="m_bar"></div></div>';
+	document.getElementById("m_progress").style.display = 'flex'
 		
 	git_src='https://akukamil.github.io/snow_words'
 	//git_src=''
