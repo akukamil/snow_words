@@ -1,6 +1,6 @@
 var M_WIDTH=800, M_HEIGHT=450;
 var app ={stage:{},renderer:{}}, game_res, objects={}, state="o",git_src, my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
-var players="", pending_player="", room_name = 'states2';
+var pending_player="", room_name = 'states2', players_node;
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
 var dict={};
@@ -762,7 +762,7 @@ var online_player = {
 		let old_rating = my_data.rating;
 		my_data.rating = this.calc_new_rating (my_data.rating, result_number);
 		objects.my_card_rating.text = my_data.rating;
-		firebase.database().ref("players/"+my_data.uid+"/rating").set(my_data.rating);
+		firebase.database().ref(players_node+'/'+my_data.uid+"/rating").set(my_data.rating);
 		
 		//если мы отменили игру то отправляем сопернику уведомление об этом
 		if (result === 'my_cancel')
@@ -775,7 +775,7 @@ var online_player = {
 			
 			//увеличиваем количество игр
 			my_data.games++;
-			firebase.database().ref("players/"+[my_data.uid]+"/games").set(my_data.games);		
+			firebase.database().ref(players_node+'/'+[my_data.uid]+"/games").set(my_data.games);		
 
 			//записываем результат в базу данных
 			let duration = ~~((Date.now() - this.start_time)*0.001);
@@ -1116,7 +1116,7 @@ var game = {
 				
 		
 		//считываем и обновляем скин соперника
-		let _skin_id = await firebase.database().ref("players/"+opp_data.uid +"/skin_id").once('value');
+		let _skin_id = await firebase.database().ref(players_node+'/'+opp_data.uid +"/skin_id").once('value');
 		_skin_id = _skin_id.val();
 		
 		//если такого скина нет
@@ -1719,7 +1719,7 @@ var keep_alive = function() {
 	}
 
 
-	firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
+	firebase.database().ref(players_node+'/'+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
 	firebase.database().ref("inbox/"+my_data.uid).onDisconnect().remove();
 	firebase.database().ref(room_name + "/"+my_data.uid).onDisconnect().remove();
 
@@ -1796,7 +1796,7 @@ var req_dialog = {
 	
 	show(uid) {		
 
-		firebase.database().ref("players/"+uid).once('value').then((snapshot) => {
+		firebase.database().ref(players_node+'/'+uid).once('value').then((snapshot) => {
 
 			//не показываем диалог если мы в игре
 			if (state === 'p')
@@ -2148,8 +2148,8 @@ var shop = {
 		
 		//обновляем количество денег
 		my_data.money -= this.price;
-		firebase.database().ref("players/"+my_data.uid+"/money").set(my_data.money);
-		firebase.database().ref("players/"+my_data.uid+"/skin_id").set(this.skin_id);
+		firebase.database().ref(players_node+'/'+my_data.uid+"/money").set(my_data.money);
+		firebase.database().ref(players_node+'/'+my_data.uid+"/skin_id").set(this.skin_id);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
 		my_data.skin_id = this.skin_id;
 		message.add(['Вы купили новый скин )))','You bought a new skin)))'][LANG])
@@ -2238,7 +2238,7 @@ var lb = {
 
 	update: function () {
 
-		firebase.database().ref("players").orderByChild('rating').limitToLast(25).once('value').then((snapshot) => {
+		firebase.database().ref(players_node).orderByChild('rating').limitToLast(25).once('value').then((snapshot) => {
 
 			if (snapshot.val()===null) {
 			  //console.log("Что-то не получилось получить данные о рейтингах");
@@ -2700,7 +2700,7 @@ var cards_menu = {
 
 							
 			//получаем pic_url из фб
-			firebase.database().ref("players/" + uid + "/pic_url").once('value').then((res) => {
+			firebase.database().ref(players_node+'/'+ uid + "/pic_url").once('value').then((res) => {
 
 				pic_url=res.val();
 				
@@ -3173,11 +3173,11 @@ async function check_daily_reward (last_seen_ts) {
 	let cur_day = new Date(cur_ts).getDate();
 	
 	//обновляем время последнего посещения
-	firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
-	//firebase.database().ref("players/"+my_data.uid + "/money").set(999);	
+	firebase.database().ref(players_node+'/'+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
+
 	if (cur_day !== last_seen_day) {		
 		my_data.money++;
-		firebase.database().ref("players/"+my_data.uid + "/money").set(my_data.money);		
+		firebase.database().ref(players_node+'/'+my_data.uid + "/money").set(my_data.money);		
 		console.log("Награда за новый день!")
 		
 		await anim2.add(objects.daily_reward,{y:[450, objects.daily_reward.sy]}, true, 1,'easeOutBack');
@@ -3215,8 +3215,22 @@ async function load_user_data() {
 
 		objects.id_avatar.texture=objects.my_avatar.texture=loader.resources.my_avatar.texture;
 		
+			
+		
+		//две комнаты для английского  и русского языков
+		if (LANG===0){
+			await auth2.load_script(git_src+'/rus_dict.js');
+			room_name = 'states';		
+			players_node='players';
+		} else {
+			await auth2.load_script(git_src+'/eng_dict.js');
+			room_name = 'states2';
+			players_node='players_eng';
+		}		
+		
+		
 		//получаем остальные данные об игроке
-		let snapshot = await firebase.database().ref("players/"+my_data.uid).once('value');
+		let snapshot = await firebase.database().ref(players_node+'/'+my_data.uid).once('value');
 		let data = snapshot.val();
 		
 		//делаем защиту от неопределенности
@@ -3234,14 +3248,7 @@ async function load_user_data() {
 		check_daily_reward(last_seen_ts);
 		
 		
-		//две комнаты для английского  и русского языков
-		if (LANG===0){
-			await auth2.load_script(git_src+'/rus_dict.js');
-			room_name = 'states'			
-		} else {
-			await auth2.load_script(git_src+'/eng_dict.js');
-			room_name = 'states2'			
-		}
+
 
 		
 			
@@ -3259,8 +3266,8 @@ async function load_user_data() {
 		firebase.database().ref("inbox/"+my_data.uid).on('value', (snapshot) => { process_new_message(snapshot.val());});
 
 		//обновляем данные в файербейс так как могли поменяться имя или фото
-		firebase.database().ref("players/"+my_data.uid + "/pic_url").set(my_data.pic_url);
-		firebase.database().ref("players/"+my_data.uid + "/name").set(my_data.name);
+		firebase.database().ref(players_node+'/'+my_data.uid + "/pic_url").set(my_data.pic_url);
+		firebase.database().ref(players_node+'/'+my_data.uid + "/name").set(my_data.name);
 		
 
 		//устанавливаем мой статус в онлайн
