@@ -2430,7 +2430,7 @@ var cards_menu = {
 			if (players[uid].hidden===0)
 				num++
 			
-		objects.players_online.text='Игроков онлайн: '+ num + ' (комната ' + room_name + ')';
+		objects.players_online.text=['Игроков онлайн: ','Players online: '][LANG]+ num + ' (' + room_name + ')';
 		
 		
 		//считаем сколько одиночных игроков и сколько столов
