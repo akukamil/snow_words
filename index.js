@@ -275,7 +275,7 @@ var anim2 = {
 	c4: (2 * Math.PI) / 3,
 	c5: (2 * Math.PI) / 4.5,
 		
-	slot: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+	slot: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
 	
 	linear: function(x) {
 		return x
@@ -3116,6 +3116,8 @@ auth2 = {
 		}
 		
 		if (game_platform === 'CRAZYGAMES') {
+			
+			try {await this.load_script('https://sdk.crazygames.com/crazygames-sdk-v2.js')} catch (e) {alert(e)};	
 			
 			let country_code = await this.get_country_code();
 			const cg_user_data=await this.search_in_crazygames();
