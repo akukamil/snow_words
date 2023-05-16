@@ -237,6 +237,25 @@ class shop_card_class extends PIXI.Container {
 	
 }
 
+var sound = {
+	
+	on : 1,
+	
+	play : function(snd_res) {
+		
+		if (this.on === 0)
+			return;
+		
+		if (game_res.resources[snd_res]===undefined)
+			return;
+		
+		game_res.resources[snd_res].sound.play();	
+		
+	}
+	
+	
+}
+
 var message =  {
 	
 	promise_resolve :0,
@@ -247,7 +266,7 @@ var message =  {
 			this.promise_resolve("forced");
 		
 		//воспроизводим звук
-		game_res.resources.message.sound.play();
+		sound.play('message');	
 
 		objects.message_text.text=text;
 
@@ -616,8 +635,7 @@ var big_message = {
 		
 		if (objects.big_message_cont.ready===false)
 			return;
-
-		gres.close_it.sound.play();
+		sound.play('close_it');	
 		anim2.add(objects.big_message_cont,{y:[objects.big_message_cont.sy,450]}, false, 0.4,'easeInBack');		
 		this.p_resolve("close");			
 	}
@@ -632,13 +650,13 @@ var confirm_dialog = {
 				
 				
 		if (objects.confirm_cont.visible === true) {
-			gres.locked.sound.play();
+			sound.play('locked');	
 			return;			
 		}		
 				
 		objects.confirm_msg.text=msg;
 		
-		gres.bad_move.sound.play();
+		sound.play('bad_move');	
 		anim2.add(objects.confirm_cont,{y:[-300,objects.confirm_cont.sy]}, true, 0.6,'easeOutBack');		
 				
 		return new Promise(function(resolve, reject){					
@@ -649,12 +667,11 @@ var confirm_dialog = {
 	button_down : function(res) {
 		
 		if (objects.confirm_cont.ready === false || objects.req_cont.visible === true) {
-			gres.locked.sound.play();
+			sound.play('locked');	
 			return;			
 		}
 		
-		
-		gres.close_it.sound.play();
+		sound.play('close_it');	
 		anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.y,-300]}, false, 0.4,'easeInBack');		
 		this.p_resolve(res);	
 		
@@ -687,8 +704,7 @@ var make_text = function (obj, text, max_width) {
 }
 
 var online_player = {
-	
-	
+		
 	name : 'online',
 	syn_ok : 0,
 	start_time : 0,	
@@ -785,9 +801,9 @@ var online_player = {
 		
 		//воспроизводим звук
 		if (result_number === DRAW || result_number === LOSE || result_number === NOSYNC )
-			gres.lose.sound.play();
+			sound.play('lose');	
 		else
-			gres.win.sound.play();
+			sound.play('win');	
 		
 		await big_message.show(result_info, `Рейтинг: ${old_rating} > ${my_data.rating}`)
 	},
@@ -923,7 +939,7 @@ var bot_player = {
 	
 	stop : async function() {
 		
-		gres.draw.sound.play();
+		sound.play('draw');	
 		some_process.bot = function(){};
 		await big_message.show(['Игра с ботом завершена!','The bot game is over!'][LANG],['Сыграйте с реальным соперником для получения рейтинга','Play with a real opponent to get a rating'][LANG]);
 	},
@@ -979,6 +995,7 @@ var game = {
 	my_move_amount : 0,
 	opp_move_amount : 0,
 	shift_vs_amount : [0,1,1,1,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
+	wall_decay:{1:{3:0,2:2,1:4,0:4},2:{0:5,4:1,3:2,2:3,1:4,0:4},3:{10:0,9:0,8:1,7:1,6:2,5:2,4:3,3:3,2:4,1:4,0:4}},
 	
 	activate: async function(role, opponent) {
 		
@@ -999,10 +1016,7 @@ var game = {
 			anim2.kill_anim(b);
 		}
 
-		if (room_name === 'states2')
-			this.max_idle_time = 18000;
-		else
-			this.max_idle_time = 15000;	
+		this.max_idle_time = 15000;	
 		
 		
 		//остаточное количество движения
@@ -1014,18 +1028,16 @@ var game = {
 			anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.y,-300]}, false, 1,'easeInOutCubic');	
 		
 		//если открыт лидерборд то закрываем его
-		if (objects.lb_1_cont.visible===true)
-			lb.close();
+		if (objects.lb_1_cont.visible===true) lb.close();
 		
 		//если открыт магаз то закрываем его
-		if (shop.active === 1)
-			shop.close();
+		if (shop.active === 1) shop.close();
 		
 		//активируем все что связано с оппонентом
 		this.opponent.activate();
 		
 		//воспроизводим звук о начале игры
-		gres.game_start.sound.play();
+		sound.play('game_start');	
 				
 		//показываем карточки игроков		
 		objects.my_card_cont.visible = true;
@@ -1054,22 +1066,35 @@ var game = {
 		objects.my_icon.y=objects.opp_icon.y = objects.my_icon.sy;
 		objects.my_icon.x = 300;
 		objects.opp_icon.x = 500;
-		objects.my_icon.rotation=objects.opp_icon.rotation = 0;
-		
-			
-		//определяем скин айди оппонента
+					
+		//если оналйн определяем скин айди оппонента и стену
 		opp_data.skin_id = 0;
-		if (this.opponent.name === 'online')
-			this.update_opp_skin_id();			
-			
+		if (this.opponent.name === 'online'){			
+			this.update_opp_skin_id();				
+			const opp_wall=await firebase.database().ref(players_node+'/'+opp_data.uid +"/wall").once('value');
+			opp_data.wall=opp_wall.val()||0;
+		}			
 			
 		//устанаваем состояния
 		this.set_player_state(objects.my_icon, IDLE);
 		this.set_player_state(objects.opp_icon, IDLE);
 		
-
-				
-				
+		//показываем стену
+		if (my_data.wall>0){
+			anim2.add(objects.my_wall,{y:[450, objects.my_wall.sy]}, true, 1.7,'linear');				
+			objects.my_wall.life={1:3,2:5,3:10}[my_data.wall];			
+			objects.my_wall.texture=gres.small_ice0.texture;		
+			objects.my_wall.tint={1:0xffffff,2:0xff9999,3:0xffff99}[my_data.wall];		
+		}
+			
+		if (opp_data.wall>0){			
+			anim2.add(objects.opp_wall,{y:[450, objects.opp_wall.sy]}, true, 1.7,'linear');	
+			objects.opp_wall.life={1:3,2:5,3:10}[opp_data.wall];		
+			objects.opp_wall.texture=gres.small_ice0.texture;	
+			objects.opp_wall.tint={1:0xffffff,2:0xff5555,3:0xffff55}[opp_data.wall];		
+		}
+		
+		
 		//опускаем наших игроков
 		anim2.add(objects.my_icon,{y:[-150, objects.my_icon.sy]}, true, 1.7,'linear');	
 		anim2.add(objects.opp_icon,{y:[-150, objects.opp_icon.sy]}, true, 1.8,'linear');	
@@ -1081,6 +1106,7 @@ var game = {
 		//отключаем все буквы
 		for (let b of objects.l_buttons)
 			b.visible = false;
+				
 		
 		//определяем структуру слов
 		main_word_conf = [3,3];
@@ -1135,7 +1161,7 @@ var game = {
 		if (result === 'my_cancel') {
 			
 			if (objects.req_cont.visible === true) {
-				gres.locked.sound.play();
+				sound.play('locked');	
 				return;			
 			}
 			
@@ -1208,8 +1234,8 @@ var game = {
 		if (this.my_sink === 1 || this.opp_sink === 1  || objects.req_cont.visible === true)
 			return;
 		
-		gres.letter_click.sound.play();
 		
+		sound.play('letter_click');	
 		objects.cur_word.text +=l.letter;
 		
 		if (objects.confirm_buttons_cont.visible === false)
@@ -1220,8 +1246,7 @@ var game = {
 		
 	erase : function() {
 		
-		gres.letter_erase.sound.play();
-		
+		sound.play('letter_erase');	
 		if (objects.cur_word.text.length === 1)
 			objects.confirm_buttons_cont.visible=false;
 
@@ -1235,7 +1260,7 @@ var game = {
 		
 		
 		if (objects.confirm_buttons_cont.ready === false || objects.req_cont.visible === true) {
-			gres.locked.sound.play();
+			sound.play('locked');	
 			return;			
 		}
 		
@@ -1338,7 +1363,7 @@ var game = {
 				b.target = target;
 				b.rotation = 0;
 				b.x_shift = x_shift;
-				gres.throw.sound.play();
+				sound.play('throw');	
 				anim2.add(b,{alpha:[0, 1]}, true, 0.2,'linear');	
 				return;
 			}			
@@ -1369,7 +1394,7 @@ var game = {
 		if (objects.confirm_buttons_cont.visible===true)
 			anim2.add(objects.confirm_buttons_cont,{x:[objects.confirm_buttons_cont.x, 900]}, true, 0.25,'easeInBack');	
 		
-		gres.falling.sound.play();
+		sound.play('falling');	
 		
 		objects.shark.x = 815;
 		objects.shark.scale.x = -0.666;
@@ -1379,12 +1404,12 @@ var game = {
 		this.opp_sink = 1;
 		
 		await anim2.add(objects.opp_icon,{x:[objects.opp_icon.x,710],y:[objects.opp_icon.y,330]}, true, 2,'linear');
-		gres.hero_sink.sound.play();
+		sound.play('hero_sink');	
 		this.set_player_state(objects.opp_icon, SINKING);
 		anim2.add(objects.opp_icon,{y:[objects.opp_icon.y,objects.opp_icon.y+50]}, true, 3,'linear');			
 		await anim2.add(objects.shark,{y:[950,280]},true,2,'linear');
 		objects.shark.texture  = gres.shark_ate_texture.texture;
-		gres.hero_death.sound.play();
+		sound.play('hero_death');	
 		anim2.kill_anim(objects.opp_icon);
 		this.add_blood_splash(objects.opp_icon.x , objects.opp_icon.y);
 		objects.opp_icon.visible=false;
@@ -1400,8 +1425,7 @@ var game = {
 		if (objects.confirm_buttons_cont.visible===true)
 			anim2.add(objects.confirm_buttons_cont,{x:[objects.confirm_buttons_cont.x, 900]}, true, 0.25,'easeInBack');	
 
-		gres.falling.sound.play();
-			
+		sound.play('falling');	
 		objects.shark.scale.x = 0.6666;
 		objects.shark.texture  = gres.shark.texture;
 		objects.shark.x = -5;
@@ -1409,13 +1433,12 @@ var game = {
 		this.set_player_state(objects.my_icon, FALLING);
 		this.my_sink = 1;
 		await anim2.add(objects.my_icon,{x:[objects.my_icon.x,100],y:[objects.my_icon.y,330]}, true, 1.5,'linear');
-		gres.hero_sink.sound.play();
-		
+		sound.play('hero_sink');	
 		this.set_player_state(objects.my_icon, SINKING);
 		anim2.add(objects.my_icon,{y:[objects.my_icon.y,objects.my_icon.y+50]}, true, 3,'linear');			
 		await anim2.add(objects.shark,{y:[950,280]},true,2,'linear');
 		objects.shark.texture  = gres.shark_ate_texture.texture;
-		gres.hero_death.sound.play();
+		sound.play('hero_death');	
 		anim2.kill_anim(objects.my_icon);
 		this.add_blood_splash(objects.my_icon.x , objects.my_icon.y);
 		objects.my_icon.visible=false;
@@ -1492,11 +1515,29 @@ var game = {
 				
 				if (b.target === ME) {
 					
+					//если попали в стену
+					if (objects.my_wall.visible && b.x < objects.my_wall.x+40){
+						b.visible = false;	
+						b.active=0
+						sound.play('wall_hit');
+						this.add_snow_pieces(b.x ,b.y, ME);
+						this.add_snow_pieces(b.x ,b.y, ME);
+						this.add_snow_pieces(b.x ,b.y, ME);
+						objects.my_wall.life--;
+						//меняем текстуру
+						objects.my_wall.texture=gres['small_ice'+this.wall_decay[my_data.wall][objects.my_wall.life]].texture;
+						if (objects.my_wall.life<=0) {
+							objects.my_wall.visible=false;
+							sound.play('wall_break');
+						}
+						return;
+					}
+					
+					
 					if (b.x < objects.my_icon.x+30) {
 						b.visible = false;	
 						b.active=0
-						gres.snowball_hit.sound.play();	
-						
+						sound.play('snowball_hit');
 						if (this.my_sink === 0 && this.opp_sink === 0) {
 							this.my_move_amount += b.x_shift;
 							this.set_player_state(objects.my_icon, HITED);
@@ -1504,16 +1545,35 @@ var game = {
 							this.add_snow_pieces(b.x ,b.y, ME);
 							this.add_snow_pieces(b.x ,b.y, ME);
 						}
-
 					}						
 				}
 				else
-				{										
+				{		
+
+
+					//если попали в стену
+					if (objects.opp_wall.visible && b.x > objects.opp_wall.x-40){
+						b.visible = false;	
+						b.active=0
+						sound.play('wall_hit');	
+						this.add_snow_pieces(b.x ,b.y, OPP);
+						this.add_snow_pieces(b.x ,b.y, OPP);
+						this.add_snow_pieces(b.x ,b.y, OPP);
+						objects.opp_wall.life--;
+						//меняем текстуру
+						objects.opp_wall.texture=gres['small_ice'+this.wall_decay[opp_data.wall][objects.opp_wall.life]].texture;
+						if (objects.opp_wall.life<=0) {
+							sound.play('wall_break');
+							objects.opp_wall.visible=false;
+						}
+						return;
+					}
+			
 					if (b.x > objects.opp_icon.x-30) {
 						b.visible = false;		
 						b.active=0
-						gres.snowball_hit.sound.play();	
-
+						
+						sound.play('snowball_hit');
 						if (this.my_sink === 0 && this.opp_sink === 0) {
 							this.opp_move_amount +=  b.x_shift;									
 							this.set_player_state(objects.opp_icon, HITED);		
@@ -1652,8 +1712,7 @@ var game = {
 		let shift_vs_row = [5,10,15,20,20,20,25,25,25,25,25,25,25,25];
 		
 		//проигрываем звук
-		gres.clock.sound.play();
-		
+		sound.play('clock');	
 		
 		
 		//передвигаем обоих
@@ -1814,8 +1873,7 @@ var req_dialog = {
 			}	else	{
 
 
-				gres.invite.sound.play();
-				
+				sound.play('invite');	
 				//защита от неправильного рейтинга
 				player_data.rating = player_data.rating || 1400;
 				
@@ -1827,6 +1885,7 @@ var req_dialog = {
 				make_text(objects.req_name,player_data.name,200);
 				objects.req_rating.text=player_data.rating;
 				req_dialog._opp_data.rating=player_data.rating;
+				
 
 				//throw "cut_string erroor";
 				req_dialog._opp_data.uid=uid;
@@ -1865,7 +1924,7 @@ var req_dialog = {
 		if (objects.req_cont.ready===false)
 			return;
 		
-		gres.click.sound.play();
+		sound.play('click');	
 
 		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.5,'easeInBack');
 				
@@ -1875,7 +1934,7 @@ var req_dialog = {
 	accept: function() {
 				
 		if (objects.req_cont.ready===false || objects.rules_cont.visible===true ) {
-			gres.bad_move.sound.play();
+			sound.play('bad_move');	
 			return;			
 		}
 		
@@ -1883,7 +1942,7 @@ var req_dialog = {
 		//if (state ==='b')
 		//	return;
 		
-		gres.click.sound.play();
+		sound.play('click');	
 		
 		//устанавливаем окончательные данные оппонента
 		opp_data=req_dialog._opp_data;
@@ -2007,8 +2066,7 @@ var social_dialog = {
 		
 		if (objects.social_cont.ready !== true)
 			return;
-		
-		gres.click.sound.play();
+		sound.play('click');	
 		vkBridge.send('VKWebAppShowInviteBox');
 		social_dialog.close();
 		
@@ -2019,7 +2077,7 @@ var social_dialog = {
 		if (objects.social_cont.ready !== true)
 			return;
 		
-		gres.click.sound.play();
+		sound.play('click');	
 		vkBridge.send('VKWebAppShowWallPostBox', {"message": `Я король айсберга. Мой рейтинг в игре Слова из снега ${my_data.rating}. Сможешь победить меня?`,
 		"attachments": "https://vk.com/app8127413"});
 		social_dialog.close();
@@ -2028,8 +2086,7 @@ var social_dialog = {
 	close_down: function() {
 		if (objects.social_cont.ready !== true)
 			return;
-		
-		gres.click.sound.play();
+		sound.play('click');	
 		social_dialog.close();
 	},
 	
@@ -2087,12 +2144,12 @@ var main_menu = {
 	play_button_down: async function () {
 
 		if (objects.big_message_cont.visible === true || objects.main_buttons_cont.ready === false || objects.id_cont.visible === true) {
-			gres.bad_move.sound.play();
+			sound.play('bad_move');	
 			return;			
 		}
 
 		//играем звук
-		game_res.resources.click.sound.play();
+		sound.play('click');	
 
 		//ждем когда главное меню закроется
 		await this.close();
@@ -2105,12 +2162,11 @@ var main_menu = {
 	lb_button_down: function () {
 
 		if (objects.big_message_cont.visible === true ||  objects.main_buttons_cont.ready === false) {
-			gres.bad_move.sound.play();
+			sound.play('bad_move');	
 			return;			
 		}
 
-		gres.click.sound.play();
-
+		sound.play('click');	
 		this.close();
 		lb.show();
 
@@ -2119,11 +2175,11 @@ var main_menu = {
 	rules_button_down: function () {
 
 		if (objects.big_message_cont.visible === true ||  objects.main_buttons_cont.ready === false ||  objects.rules_cont.ready === false) {
-			gres.bad_move.sound.play();
+			sound.play('bad_move');	
 			return;			
 		}
 
-		gres.click.sound.play();
+		sound.play('click');	
 
 	
 		anim2.add(objects.rules_cont,{y:[-450, objects.rules_cont.sy]}, true, 0.5,'easeOutBack');
@@ -2133,7 +2189,7 @@ var main_menu = {
 	rules_ok_down: function () {
 		
 		if (objects.big_message_cont.visible === true ||  objects.rules_cont.ready === false) {
-			gres.bad_move.sound.play();
+			sound.play('bad_move');	
 			return;			
 		}
 		
@@ -2147,7 +2203,7 @@ var main_menu = {
 		
 		
 		if (objects.shop_button.ready === false || objects.big_message_cont.visible === true || objects.main_buttons_cont.ready === false || objects.id_cont.visible === true) {
-			gres.bad_move.sound.play();
+			sound.play('bad_move');	
 			return;			
 		}		
 		
@@ -2278,12 +2334,11 @@ var lb = {
 	back_button_down: function() {
 
 		if (objects.big_message_cont.visible === true ||  objects.lb_cards_cont.ready === false) {
-			gres.bad_move.sound.play();
+			sound.play('bad_move');	
 			return;			
 		}
 
-
-		gres.close_it.sound.play();
+		sound.play('close_it');	
 		this.close();
 		main_menu.activate();
 
@@ -2817,12 +2872,11 @@ var cards_menu = {
 	show_table_dialog : function (card_id) {
 		
 		if (objects.td_cont.ready === false || objects.td_cont.visible === true || objects.big_message_cont.visible === true ||objects.req_cont.visible === true)	{
-			gres.locked.sound.play();
+			sound.play('locked');	
 			return
 		};
 
-
-		gres.click.sound.play();
+		sound.play('click');	
 		
 		anim2.add(objects.td_cont,{y:[-150,objects.td_cont.sy]}, true, 0.5,'easeOutBack');
 		
@@ -2841,9 +2895,8 @@ var cards_menu = {
 		
 		if (objects.td_cont.ready === false)
 			return;
-		
-		
-		gres.close_it.sound.play();
+				
+		sound.play('close_it');	
 		
 		anim2.add(objects.td_cont,{y:[objects.td_cont.sy,400,]}, false, 0.5,'easeInBack');
 		
@@ -2853,14 +2906,14 @@ var cards_menu = {
 
 
 		if (objects.invite_cont.ready === false || objects.invite_cont.visible === true || 	objects.big_message_cont.visible === true ||objects.req_cont.visible === true)	{
-			game_res.resources.locked.sound.play();
+			sound.play('locked');	
 			return
 		};
 
 
 		pending_player="";
 
-		gres.click.sound.play();
+		sound.play('click');	
 
 		//показыаем кнопку приглашения			
 		anim2.add(objects.invite_cont,{y:[450, objects.invite_cont.sy]}, true, 0.6,'easeOutBack');
@@ -2921,8 +2974,9 @@ var cards_menu = {
 		if (objects.invite_cont.ready === false)
 			return;
 		
-		gres.close_it.sound.play();
 
+		sound.play('close_it');	
+				
 		//отправляем сообщение что мы уже не заинтересованы в игре
 		if (pending_player!=="") {
 			firebase.database().ref("inbox/"+pending_player).set({sender:my_data.uid,message:"INV_REM",tm:Date.now()});
@@ -2936,7 +2990,7 @@ var cards_menu = {
 
 
 		if (objects.invite_cont.ready === false || objects.invite_header6.text==='Ждем ответ...'||objects.big_message_cont.visible === true ||objects.req_cont.visible === true)	{
-			gres.locked.sound.play();
+			sound.play('locked');	
 			return
 		}
 
@@ -2953,7 +3007,7 @@ var cards_menu = {
 		}
 		else
 		{
-			gres.click.sound.play();
+			sound.play('click');	
 			objects.invite_header6.text = ['Ждем ответ...','Await...'][LANG];
 			firebase.database().ref("inbox/"+cards_menu._opp_data.uid).set({sender:my_data.uid,message:"INV",tm:Date.now()});
 			pending_player=cards_menu._opp_data.uid;
@@ -2992,13 +3046,12 @@ var cards_menu = {
 	back_button_down: function() {
 
 		if (objects.td_cont.visible === true || objects.big_message_cont.visible === true ||objects.req_cont.visible === true ||objects.invite_cont.visible === true)	{
-			gres.locked.sound.play();
+			sound.play('locked');	
 			return
 		};
 
 
-
-		gres.close_it.sound.play();
+		sound.play('close_it');	
 
 		this.close();
 		main_menu.activate();
@@ -3182,6 +3235,15 @@ auth2 = {
 			return;
 		}
 		
+		if (game_platform === 'VSEIGRU') {	
+
+			let country_code = await this.get_country_code();
+			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('VI_');
+			my_data.name = this.get_random_name(my_data.uid) + ' (' + country_code + ')';
+			my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';	
+			return;
+		}
+		
 		if (game_platform === 'UNKNOWN') {
 			
 			//если не нашли платформу
@@ -3291,7 +3353,7 @@ async function load_user_data() {
 		my_data.games = (data && data.games) || 0;
 		my_data.skin_id = (data && data.skin_id) || 0;
 		my_data.money = (data && data.money)  || 0;		
-		
+		my_data.wall = (data && data.wall)  || 0;		
 		
 		//определяем последнее время посещения
 		let last_seen_ts = (data && data.tm) || 1000;
@@ -3425,6 +3487,13 @@ async function define_platform_and_language() {
 		LANG = 1;
 		return;
 	}
+	
+	if (s.includes('vseigru')) {
+			
+		game_platform = 'VSEIGRU';	
+		LANG = 0;
+		return;
+	}	
 	
 	if (s.includes('192.168')) {
 			
@@ -3574,7 +3643,6 @@ async function load_resources() {
 	game_res.add('close_it',git_src+'/sounds/close_it.mp3');
 	game_res.add('game_start',git_src+'/sounds/game_start.mp3');
 	game_res.add('lose',git_src+'/sounds/lose.mp3');
-	game_res.add('receive_move',git_src+'/sounds/receive_move.mp3');
 	game_res.add('message',git_src+'/sounds/message.mp3');
 	game_res.add('bad_move',git_src+'/sounds/bad_move.mp3');
 	game_res.add('win',git_src+'/sounds/win.mp3');
@@ -3587,6 +3655,8 @@ async function load_resources() {
 	game_res.add('letter_erase',git_src+'/sounds/letter_erase.mp3');
 	game_res.add('falling',git_src+'/sounds/falling.mp3');
 	game_res.add('hero_sink',git_src+'/sounds/sink.mp3')
+	game_res.add('wall_hit',git_src+'/sounds/wall_hit.mp3')
+	game_res.add('wall_break',git_src+'/sounds/wall_break.mp3')
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++)
