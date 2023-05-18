@@ -1192,7 +1192,8 @@ var game = {
 		//сначала завершаем все что связано с оппонентом
 		await this.opponent.stop(result);		
 						
-
+		objects.my_wall.visible=false;
+		objects.opp_wall.visible=false;
 		objects.opp_card_cont.visible=false;
 		objects.my_card_cont.visible=false;
 		objects.cur_word.visible = false;	
