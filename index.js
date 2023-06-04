@@ -1,4 +1,4 @@
-var M_WIDTH=800, M_HEIGHT=450;
+var M_WIDTH=800, M_HEIGHT=450, gdata={};
 var app ={stage:{},renderer:{}}, game_res, objects={}, state="o",git_src, my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
 var pending_player="", room_name = 'states2', players_node;
 var my_data={opp_id : ''},opp_data={};
@@ -203,38 +203,55 @@ class snowball_class extends PIXI.Container{
 }
 
 class shop_card_class extends PIXI.Container {
-	
-	
-	constructor (x, y, price, skin_id) {
+		
+	constructor (data) {
 		
 		super();
-		this.x=x;
-		this.y=y;
+		this.x=data.x;
+		this.y=data.y;
 		this.bcg = new PIXI.Sprite(gres.buy_card_bcg.texture);
 		this.bcg.interactive=true;
 		this.bcg.buttonMode=true;
 		this.bcg.pointerover=function(){this.tint=0x9999ff};
 		this.bcg.pointerout=function(){this.tint=0xffffff};
 		this.bcg.pointerdown=shop.card_down.bind(this);
-		this.bcg.width=150;
-		this.bcg.height=200;
+		this.bcg.width=gdata.shop_card_w;
+		this.bcg.height=gdata.shop_card_h;
 		
-		this.skin_id = skin_id;
-		this.skin_avatar = new PIXI.Sprite(gres['idle'+skin_id].texture);
-		this.skin_avatar.x = this.skin_avatar.y = 35;
-		this.skin_avatar.width=this.skin_avatar.height=80;
 		
-		this.price = price;
-		this.price_text = new PIXI.BitmapText(['Цена: ','Price: '][LANG] + price, {fontName: 'mfont',fontSize: 30});
-		this.price_text.y=150;
-		this.price_text.x=75;
+		if (data.type==='skin') this.img = new PIXI.Sprite(gres[data.name+'_idle'].texture);
+		if (data.type==='wall') this.img = new PIXI.Sprite(gres.wall.texture);
+		
+		//копируем в даннуе карточки
+		this.data=data
+				
+		//применяем окраску
+		this.img.tint=data.tint||0xffffff;
+		
+		
+		this.img.x=gdata.shop_card_image_x;
+		this.img.y=gdata.shop_card_image_y;;
+		this.img.width=gdata.shop_card_image_w;
+		this.img.height=gdata.shop_card_image_h;
+		
+		
+		this.price_text = new PIXI.BitmapText(['Цена: ','Price: '][LANG] + data.price, {fontName: 'mfont',fontSize: gdata.shop_card_price_font_size});
+		this.price_text.x=gdata.shop_card_price_x;
+		this.price_text.y=gdata.shop_card_price_y;
+		this.price_text.tint=gdata.shop_card_price_font_col;
 		this.price_text.anchor.set(0.5,0.5);
-		this.addChild(this.bcg,this.skin_avatar, this.price_text);
+		
+		this.desc_text = new PIXI.BitmapText(data.desc, {fontName: 'mfont',fontSize: gdata.shop_card_desc_font_size,align:'center'});
+		this.desc_text.x=gdata.shop_card_desc_x;
+		this.desc_text.y=gdata.shop_card_desc_y;
+		this.desc_text.tint=gdata.shop_card_desc_font_col;
+		this.desc_text.maxWidth=gdata.shop_card_desc_max_w;
+		this.desc_text.anchor.set(0.5,0.5);		
+				
+		this.addChild(this.bcg,this.img,this.price_text,this.desc_text);
 		
 	}
-	
-	
-	
+
 }
 
 var sound = {
@@ -816,18 +833,6 @@ var online_player = {
 	
 }
 
-var shuffle_array = function(a) {
-    let n = a.length;
-
-    for(var i = n - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = a[i];
-        a[i] = a[j];
-        a[j] = tmp;
-    }
-    return a;
-}
-
 function get_random_word() {
 	
 	let letters_blocks=['ОЕАИ','НТСРВЛКМДП','УЯЫЬГЗБЧЙХЖШЮ'];	
@@ -885,8 +890,6 @@ var bot_player = {
 	},
 	
 	process : async function () {
-		
-
 		
 		//если появилось сообщение то выходим из игры или изменилось состояние
 		if (objects.big_message_cont.visible === true || state !== 'b') {
@@ -995,9 +998,23 @@ var game = {
 	my_move_amount : 0,
 	opp_move_amount : 0,
 	shift_vs_amount : [0,1,1,1,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
-	wall_decay:{1:{3:0,2:2,1:4,0:4},2:{0:5,4:1,3:2,2:3,1:4,0:4},3:{10:0,9:0,8:1,7:1,6:2,5:2,4:3,3:3,2:4,1:4,0:4}},
+	wall_decay:null,
 	
-	activate: async function(role, opponent) {
+
+	async activate(role, opponent) {
+		
+		
+		//создаем wall decay для каждой стены
+		if (this.wall_decay===null){
+			this.wall_decay={};
+			for (let i=1;i<4;i++){
+				this.wall_decay[i]={};
+				const max_life=gdata.walls_life[i];
+				for (k=0;k<=max_life;k++)
+					this.wall_decay[i][k]=Math.round((1-(k-1)/(max_life-1))*4);
+			}			
+		}
+
 		
 		//устанавливаем роль
 		my_role = role;
@@ -1068,9 +1085,9 @@ var game = {
 		objects.opp_icon.x = 500;
 					
 		//если оналйн определяем скин айди оппонента и стену
-		opp_data.skin_id = 0;
+		opp_data.skin = 'peng';
 		if (this.opponent.name === 'online'){			
-			this.update_opp_skin_id();				
+			this.update_opp_skin();				
 			const opp_wall=await firebase.database().ref(players_node+'/'+opp_data.uid +"/wall").once('value');
 			opp_data.wall=opp_wall.val()||0;
 		}			
@@ -1082,16 +1099,16 @@ var game = {
 		//показываем стену
 		if (my_data.wall>0){
 			anim2.add(objects.my_wall,{y:[450, objects.my_wall.sy]}, true, 1.7,'linear');				
-			objects.my_wall.life={1:3,2:5,3:10}[my_data.wall];			
-			objects.my_wall.texture=gres.small_ice0.texture;		
-			objects.my_wall.tint={1:0xffffff,2:0xff9999,3:0xffff99}[my_data.wall];		
+			objects.my_wall.life=gdata.walls_life[my_data.wall];			
+			objects.my_wall.texture=gres.wall0.texture;		
+			objects.my_wall.tint=gdata[`wall_${my_data.wall}_tint`];		
 		}
 			
 		if (opp_data.wall>0){			
 			anim2.add(objects.opp_wall,{y:[450, objects.opp_wall.sy]}, true, 1.7,'linear');	
-			objects.opp_wall.life={1:3,2:5,3:10}[opp_data.wall];		
-			objects.opp_wall.texture=gres.small_ice0.texture;	
-			objects.opp_wall.tint={1:0xffffff,2:0xff5555,3:0xffff55}[opp_data.wall];		
+			objects.opp_wall.life=gdata.walls_life[opp_data.wall];		
+			objects.opp_wall.texture=gres.wall0.texture;	
+			objects.opp_wall.tint=gdata[`wall_${opp_data.wall}_tint`];		
 		}
 		
 		
@@ -1138,28 +1155,27 @@ var game = {
 		
 	},
 	
-	update_opp_skin_id : async function () {
+	async update_opp_skin () {
 				
 		
 		//считываем и обновляем скин соперника
-		let _skin_id = await firebase.database().ref(players_node+'/'+opp_data.uid +"/skin_id").once('value');
-		_skin_id = _skin_id.val();
+		let _skin = await firebase.database().ref(players_node+'/'+opp_data.uid +"/skin").once('value');
+		_skin = _skin.val();
 		
 		//если такого скина нет
-		if (gres['idle' + _skin_id] === undefined)
+		if (gres['idle' + _skin] === undefined)
 			return;
 		
-		opp_data.skin_id = _skin_id;
+		opp_data.skin = _skin;
 		this.set_player_state(objects.opp_icon, objects.opp_icon.state);
 
 	},
 		
-	stop : async function (result) {
+	async stop (result) {
 						
 				
 		//если отменяем игру то сначала предупреждение
-		if (result === 'my_cancel') {
-			
+		if (result === 'my_cancel') {			
 			if (objects.req_cont.visible === true) {
 				sound.play('locked');	
 				return;			
@@ -1224,13 +1240,18 @@ var game = {
 		
 		main_menu.activate();
 		
+		//если начали игру то стену уже вычитаем
+		my_data.wall=0;		
+		firebase.database().ref(players_node+'/'+my_data.uid + '/wall').set(my_data.wall);
+
+		
 		//показываем социальную панель
 		if (game_platform === 'VK')
 			if (Math.random()>-0.75)
 				social_dialog.show();		
 	},
 
-	letter_down : function(l) {			
+	letter_down(l) {			
 		
 		if (this.my_sink === 1 || this.opp_sink === 1  || objects.req_cont.visible === true)
 			return;
@@ -1245,7 +1266,7 @@ var game = {
 		
 	},
 		
-	erase : function() {
+	erase() {
 		
 		sound.play('letter_erase');	
 		if (objects.cur_word.text.length === 1)
@@ -1257,7 +1278,7 @@ var game = {
 	
 	},
 	
-	confirm : function() {
+	confirm () {
 		
 		
 		if (objects.confirm_buttons_cont.ready === false || objects.req_cont.visible === true) {
@@ -1291,7 +1312,26 @@ var game = {
 	
 	},
 		
-	add_snow_pieces : function(x, y , target) {
+	add_wall_break(wall){		
+	
+		const sparks=[objects.spark0,objects.spark1,objects.spark2,objects.spark3,objects.spark4];
+		const sx=wall.x;
+		const sy=wall.y+50;
+		const ang=Math.PI*2/sparks.length;
+		const ang2=Math.random();
+
+		for (let i=0;i<sparks.length;i++){
+			
+			const spark=sparks[i];
+			spark.tint=wall.tint;
+			spark.rotation=Math.random()*6.26;			
+			const dx=Math.sin(i*ang+ang2)*150;
+			const dy=Math.cos(i*ang+ang2)*150;			
+			anim2.add(spark,{x:[sx,sx+dx],y:[sy,sy+dy],alpha:[1,0]}, false, 0.6,'linear');
+		}
+	},
+		
+	add_snow_pieces(x, y , target) {
 				
 		for (let p of objects.s_pieces) {			
 			
@@ -1309,7 +1349,7 @@ var game = {
 		}	
 	},
 		
-	turn_word_to_bullets : async function(word, target, id) {	
+	async turn_word_to_bullets(word, target, id) {	
 	
 	
 		//фиксируем время слова
@@ -1331,7 +1371,7 @@ var game = {
 		
 	},
 	
-	add_bullet : function(letter, target, x_shift) {			
+	add_bullet(letter, target, x_shift) {			
 		
 
 		for (let b of objects.snowballs) {
@@ -1372,7 +1412,7 @@ var game = {
 	
 	},
 	
-	add_blood_splash : function(x,y) {
+	add_blood_splash(x,y) {
 		
 		
 		for (let p of objects.blood) {			
@@ -1387,7 +1427,7 @@ var game = {
 		
 	},
 	
-	sink_opponent : async function() {
+	async sink_opponent() {
 		
 		
 		//убираем кнопки
@@ -1418,7 +1458,7 @@ var game = {
 		this.stop('my_win');
 	},
 	
-	sink_me : async function() {
+	async sink_me() {
 		
 		
 		//убираем кнопки
@@ -1448,7 +1488,7 @@ var game = {
 		
 	},
 		
-	exit_button_down : function() {
+	exit_button_down() {
 		
 		if (objects.big_message_cont.visible === true || objects.req_cont.visible === true)
 			return;
@@ -1457,45 +1497,45 @@ var game = {
 		
 	},
 		
-	set_player_state : function(player, p_state) {
+	set_player_state(player, p_state) {
 		
 		
 		player.state = p_state;
 		player.state_time = game_tick;
-		let skin_id = 0;
+		let skin = 'peng';
 		
 		if (player === objects.my_icon)
-			skin_id = my_data.skin_id;
+			skin = my_data.skin;
 		else
-			skin_id = opp_data.skin_id;
+			skin = opp_data.skin;
 		
 		switch (p_state) {
 						
 			case IDLE:
-				player.texture = gres['idle' + skin_id].texture;
+				player.texture = gres[skin+'_idle'].texture;
 			break;
 			
 			case HITED:
-				player.texture = gres['hited' + skin_id].texture;
+				player.texture = gres[skin+'_hited'].texture;
 			break;
 			
 			case THROWING:
-				player.texture = gres['throwing' + skin_id].texture;
+				player.texture = gres[skin+'_throwing'].texture;
 			break;
 			
 			case FALLING:
-				player.texture = gres['falling' + skin_id].texture;
+				player.texture = gres[skin+'_falling'].texture;
 			break;
 			
 			case SINKING:
-				player.texture = gres['sinking' + skin_id].texture;
+				player.texture = gres[skin+'_sinking'].texture;
 			break;
 		}
 		
 		
 	},
 		
-	process : function() {
+	process() {
 		
 		//обработка комков
 		for (let b of objects.snowballs) {
@@ -1526,9 +1566,10 @@ var game = {
 						this.add_snow_pieces(b.x ,b.y, ME);
 						objects.my_wall.life--;
 						//меняем текстуру
-						objects.my_wall.texture=gres['small_ice'+this.wall_decay[my_data.wall][objects.my_wall.life]].texture;
+						objects.my_wall.texture=gres['wall'+this.wall_decay[my_data.wall][objects.my_wall.life]].texture;
 						if (objects.my_wall.life<=0) {
 							objects.my_wall.visible=false;
+							this.add_wall_break(objects.my_wall);
 							sound.play('wall_break');
 						}
 						return;
@@ -1562,9 +1603,10 @@ var game = {
 						this.add_snow_pieces(b.x ,b.y, OPP);
 						objects.opp_wall.life--;
 						//меняем текстуру
-						objects.opp_wall.texture=gres['small_ice'+this.wall_decay[opp_data.wall][objects.opp_wall.life]].texture;
+						objects.opp_wall.texture=gres['wall'+this.wall_decay[opp_data.wall][objects.opp_wall.life]].texture;
 						if (objects.opp_wall.life<=0) {
 							sound.play('wall_break');
+							this.add_wall_break(objects.opp_wall);
 							objects.opp_wall.visible=false;
 						}
 						return;
@@ -1646,7 +1688,6 @@ var game = {
 			}
 		
 		}
-
 		
 		//проверка падения
 		if (this.my_sink === 0 && this.opp_sink === 0) {
@@ -1663,7 +1704,7 @@ var game = {
 	
 	},
 	
-	get_new_letter : function() {
+	get_new_letter() {
 		
 		let block0='ОЕАИНТСРВЛКМДПГЗБУЯ';	
 		if(LANG===1)
@@ -1684,7 +1725,7 @@ var game = {
 		}
 	},
 	
-	receive_move : async function (word) {
+	async receive_move (word) {
 		
 
 		game.turn_word_to_bullets(word, ME, game_id);
@@ -1699,7 +1740,7 @@ var game = {
 		
 	},
 	
-	time_hit : async function(new_let) {
+	async time_hit(new_let) {
 		
 		//фиксируем время слова
 		this.last_word_time = Date.now();		
@@ -2199,8 +2240,8 @@ var main_menu = {
 	
 	shop_button_down : function() {
 		
-		//message.add('Закрыто!');
-		//return;
+		message.add('Закрыто!');
+		return;
 		
 		
 		if (objects.shop_button.ready === false || objects.big_message_cont.visible === true || objects.main_buttons_cont.ready === false || objects.id_cont.visible === true) {
@@ -2225,29 +2266,17 @@ var main_menu = {
 
 var shop = {
 	
-	active : 0,
 	
 	activate : function () {
 		
-
-
-		this.active = 1;
 		anim2.add(objects.shop_cont,{alpha: [0,1]}, true, 0.5,'linear');
 		objects.desktop.texture=gres.desktop2.texture;
 		objects.ice_cream_balance.text = 'x' + my_data.money;
 	},
 	
-	card_down : async function () {
+	async try_buy_skin(data){
 		
-		if (objects.confirm_cont.visible === true)
-			return;
-		
-		if (this.price > my_data.money) {
-			message.add(['Недостаточно мороженок (((','Not enough icecream((('][LANG]);
-			return;
-		}
-		
-		if (my_data.skin_id === this.skin_id) {
+		if (my_data.skin === data.name) {
 			message.add(['У вас уже есть этот скин!!!','You already have this skin'][LANG]);
 			return;
 		}
@@ -2257,16 +2286,51 @@ var shop = {
 			return;
 		
 		//обновляем количество денег
-		my_data.money -= this.price;
-		firebase.database().ref(players_node+'/'+my_data.uid+"/money").set(my_data.money);
-		firebase.database().ref(players_node+'/'+my_data.uid+"/skin_id").set(this.skin_id);
+		my_data.money -= data.price;
+		firebase.database().ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
+		firebase.database().ref(players_node+'/'+my_data.uid+'/skin').set(data.name);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
-		my_data.skin_id = this.skin_id;
+		my_data.skin = data.name;
 		message.add(['Вы купили новый скин )))','You bought a new skin)))'][LANG])
+				
+		//обновляем мою иконку
 		game.set_player_state(objects.my_icon, objects.my_icon.state);
 		
-		console.log(this.price)
+	},
+	
+	async try_buy_wall(data){
 		
+		if (my_data.wall !== 0) {
+			message.add(['У вас уже есть стена!!!','You already have a wall'][LANG]);
+			return;
+		}
+		
+		let res = await confirm_dialog.show(['Точно хотите купить?','Sure?'][LANG]);
+		if (res === 'no')
+			return;
+		
+		//обновляем количество денег
+		my_data.money -= data.price;
+		firebase.database().ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
+		firebase.database().ref(players_node+'/'+my_data.uid+'/wall').set(data.wall);
+		objects.ice_cream_balance.text = 'x' + my_data.money;
+		my_data.wall = data.wall;
+		message.add(['Вы купили стену )))','You bought a wall)))'][LANG])
+		
+	},
+			
+	card_down () {
+		
+		if (objects.confirm_cont.visible === true) return;
+		
+		if (this.price > my_data.money) {
+			message.add(['Недостаточно мороженок (((','Not enough icecream((('][LANG]);
+			return;
+		}
+		
+		if (this.data.type==='skin') shop.try_buy_skin(this.data);
+		if (this.data.type==='wall') shop.try_buy_wall(this.data);
+	
 	},
 		
 	exit_down : function() {
@@ -2281,9 +2345,6 @@ var shop = {
 			
 	close : function () {
 		
-
-		
-		this.active = 0;
 		anim2.add(objects.shop_cont,{alpha: [1,0]}, false, 0.5,'linear');
 		objects.desktop.texture=gres.desktop.texture;
 	}
@@ -3342,30 +3403,29 @@ async function load_user_data() {
 			await auth2.load_script(git_src+'/eng_dict.js');
 			room_name = 'states2';
 			players_node='players_eng';
-		}		
+		}	
+
+		room_name = 'states';			
 		
 		
 		//получаем остальные данные об игроке
 		let snapshot = await firebase.database().ref(players_node+'/'+my_data.uid).once('value');
 		let data = snapshot.val();
 		
+		
+		
 		//делаем защиту от неопределенности
 		my_data.rating = (data && data.rating) || 1400;
 		my_data.games = (data && data.games) || 0;
-		my_data.skin_id = (data && data.skin_id) || 0;
+		my_data.skin = (data && data.skin) || 'peng';
 		my_data.money = (data && data.money)  || 0;		
 		my_data.wall = (data && data.wall)  || 0;		
-		
+
+
 		//определяем последнее время посещения
 		let last_seen_ts = (data && data.tm) || 1000;
-		
-
-		
+				
 		check_daily_reward(last_seen_ts);
-		
-		
-
-
 		
 			
 		//отключение от игры и удаление не нужного
@@ -3384,7 +3444,8 @@ async function load_user_data() {
 		//обновляем данные в файербейс так как могли поменяться имя или фото
 		firebase.database().ref(players_node+'/'+my_data.uid + "/pic_url").set(my_data.pic_url);
 		firebase.database().ref(players_node+'/'+my_data.uid + "/name").set(my_data.name);
-		
+		firebase.database().ref(players_node+'/'+my_data.uid + "/wall").set(my_data.wall);
+		firebase.database().ref(players_node+'/'+my_data.uid + "/skin").set(my_data.skin);
 
 		//устанавливаем мой статус в онлайн
 		set_state({state : 'o'});
