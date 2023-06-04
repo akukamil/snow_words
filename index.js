@@ -740,6 +740,11 @@ var online_player = {
 		
 		//фиксируем врему начала игры
 		this.start_time = Date.now();
+		
+		//вычиcляем рейтинг при проигрыше и устанавливаем его в базу он потом изменится
+		const lose_rating = this.calc_new_rating(my_data.rating, LOSE);
+		if (lose_rating >100 && lose_rating<9999)
+			firebase.database().ref("players/"+my_data.uid+"/rating").set(lose_rating);
 				
 		//устанавливаем статус в базе данных а если мы не видны то установливаем только скрытое состояние
 		set_state({state : 'p'});
