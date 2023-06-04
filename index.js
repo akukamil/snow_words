@@ -1244,11 +1244,6 @@ var game = {
 		my_data.wall=0;		
 		firebase.database().ref(players_node+'/'+my_data.uid + '/wall').set(my_data.wall);
 
-		
-		//показываем социальную панель
-		if (game_platform === 'VK')
-			if (Math.random()>-0.75)
-				social_dialog.show();		
 	},
 
 	letter_down(l) {			
@@ -2093,51 +2088,6 @@ var	ad = {
 		return 'err';
 		
 	}
-}
-
-var social_dialog = {
-	
-	show : function() {
-		
-		anim2.add(objects.social_cont,{x:[800,objects.social_cont.sx]}, true, 0.06,'linear');
-		
-		
-	},
-	
-	invite_down : function() {
-		
-		if (objects.social_cont.ready !== true)
-			return;
-		sound.play('click');	
-		vkBridge.send('VKWebAppShowInviteBox');
-		social_dialog.close();
-		
-	},
-	
-	share_down: function() {
-		
-		if (objects.social_cont.ready !== true)
-			return;
-		
-		sound.play('click');	
-		vkBridge.send('VKWebAppShowWallPostBox', {"message": `Я король айсберга. Мой рейтинг в игре Слова из снега ${my_data.rating}. Сможешь победить меня?`,
-		"attachments": "https://vk.com/app8127413"});
-		social_dialog.close();
-	},
-	
-	close_down: function() {
-		if (objects.social_cont.ready !== true)
-			return;
-		sound.play('click');	
-		social_dialog.close();
-	},
-	
-	close : function() {
-		
-		anim2.add(objects.social_cont,{x:[objects.social_cont.x,800]}, false, 0.06,'linear');
-				
-	}
-	
 }
 
 var main_menu = {
