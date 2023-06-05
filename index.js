@@ -1168,7 +1168,7 @@ var game = {
 		_skin = _skin.val();
 		
 		//если такого скина нет
-		if (gres['idle' + _skin] === undefined)
+		if (gres[skin+'_idle'] === undefined)
 			return;
 		
 		opp_data.skin = _skin;
