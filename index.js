@@ -2195,8 +2195,8 @@ var main_menu = {
 	
 	shop_button_down : function() {
 		
-		message.add('Закрыто!');
-		return;
+		//message.add('Закрыто!');
+		//return;
 		
 		
 		if (objects.shop_button.ready === false || objects.big_message_cont.visible === true || objects.main_buttons_cont.ready === false || objects.id_cont.visible === true) {
@@ -2278,7 +2278,7 @@ var shop = {
 		
 		if (objects.confirm_cont.visible === true) return;
 		
-		if (this.price > my_data.money) {
+		if (this.data.price > my_data.money) {
 			message.add(['Недостаточно мороженок (((','Not enough icecream((('][LANG]);
 			return;
 		}
