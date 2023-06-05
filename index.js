@@ -2195,8 +2195,8 @@ var main_menu = {
 	
 	shop_button_down : function() {
 		
-		message.add('Закрыто!');
-		return;
+		//message.add('Закрыто!');
+		//return;
 		
 		
 		if (objects.shop_button.ready === false || objects.big_message_cont.visible === true || objects.main_buttons_cont.ready === false || objects.id_cont.visible === true) {
