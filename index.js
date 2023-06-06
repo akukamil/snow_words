@@ -1565,13 +1565,13 @@ var game = {
 						this.add_snow_pieces(b.x ,b.y, ME);
 						this.add_snow_pieces(b.x ,b.y, ME);
 						objects.my_wall.life--;
-						//меняем текстуру
-						objects.my_wall.texture=gres['wall'+this.wall_decay[my_data.wall][objects.my_wall.life]].texture;
 						if (objects.my_wall.life<=0) {
 							objects.my_wall.visible=false;
 							this.add_wall_break(objects.my_wall);
-							sound.play('wall_break');
+							sound.play('wall_break');return;
 						}
+						//меняем текстуру
+						objects.my_wall.texture=gres['wall'+this.wall_decay[my_data.wall][objects.my_wall.life]].texture;
 						return;
 					}
 					
@@ -1602,13 +1602,13 @@ var game = {
 						this.add_snow_pieces(b.x ,b.y, OPP);
 						this.add_snow_pieces(b.x ,b.y, OPP);
 						objects.opp_wall.life--;
-						//меняем текстуру
-						objects.opp_wall.texture=gres['wall'+this.wall_decay[opp_data.wall][objects.opp_wall.life]].texture;
 						if (objects.opp_wall.life<=0) {
 							sound.play('wall_break');
 							this.add_wall_break(objects.opp_wall);
-							objects.opp_wall.visible=false;
+							objects.opp_wall.visible=false;return;
 						}
+						//меняем текстуру
+						objects.opp_wall.texture=gres['wall'+this.wall_decay[opp_data.wall][objects.opp_wall.life]].texture;
 						return;
 					}
 			
