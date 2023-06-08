@@ -1053,7 +1053,7 @@ var game = {
 		if (objects.lb_1_cont.visible===true) lb.close();
 		
 		//если открыт магаз то закрываем его
-		if (shop.active === 1) shop.close();
+		if (objects.shop_cont.visible === true) shop.close();
 		
 		//активируем все что связано с оппонентом
 		this.opponent.activate();
