@@ -1243,11 +1243,7 @@ var game = {
 		//показыаем рекламу		
 		await ad.show();
 		
-		main_menu.activate();
-		
-		//если начали игру то стену уже вычитаем
-		my_data.wall=0;		
-		firebase.database().ref(players_node+'/'+my_data.uid + '/wall').set(my_data.wall);
+		main_menu.activate();		
 
 	},
 
@@ -2270,7 +2266,7 @@ var shop = {
 		firebase.database().ref(players_node+'/'+my_data.uid+'/wall').set(data.wall);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
 		my_data.wall = data.wall;
-		message.add(['Вы купили стену )))','You bought a wall)))'][LANG])
+		message.add(['У Вас есть стена на игровой сеанс)))','You bought a wall)))'][LANG])
 		
 	},
 			
@@ -3374,7 +3370,7 @@ async function load_user_data() {
 		my_data.games = (data && data.games) || 0;
 		my_data.skin = (data && data.skin) || 'peng';
 		my_data.money = (data && data.money)  || 0;		
-		my_data.wall = (data && data.wall)  || 0;		
+		my_data.wall = 0;		
 
 
 		//определяем последнее время посещения
