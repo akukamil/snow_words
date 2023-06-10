@@ -2270,7 +2270,7 @@ var shop = {
 		firebase.database().ref(players_node+'/'+my_data.uid+'/wall').set(data.wall);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
 		my_data.wall = data.wall;
-		message.add(['У Вас есть стена на игровой сеанс)))','You bought a wall)))'][LANG])
+		message.add(['Вы купили стену на игровой сеанс)))','You bought a wall)))'][LANG])
 		
 	},
 			
@@ -2292,7 +2292,7 @@ var shop = {
 		
 		if (objects.shop_cont.ready === false)
 			return;
-		
+		sound.play('click');
 		this.close();
 		main_menu.activate();
 		
