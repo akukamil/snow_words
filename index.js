@@ -206,6 +206,10 @@ class shop_card_class extends PIXI.Container {
 		
 	constructor (data) {
 		
+		//скидка
+		data.price=~~(data.price*0.5);
+		
+		
 		super();
 		this.x=data.x;
 		this.y=data.y;
