@@ -1819,7 +1819,7 @@ var keep_alive = function() {
 		//убираем из списка если прошло время с момента перехода в скрытое состояние		
 		let cur_ts = Date.now();	
 		let sec_passed = (cur_ts - hidden_state_start)/1000;		
-		if ( sec_passed > 100 )	firebase.database().ref("states/"+my_data.uid).remove();
+		if ( sec_passed > 100 )	firebase.database().ref(room_name+'/'+my_data.uid).remove();
 		return;		
 	}
 
@@ -3360,7 +3360,7 @@ async function load_user_data() {
 			players_node='players_eng';
 		}	
 
-		room_name = 'states';			
+		//room_name = 'states';			
 		
 		
 		//получаем остальные данные об игроке
