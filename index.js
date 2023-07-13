@@ -2555,7 +2555,8 @@ var cards_menu = {
 			if (players[uid].hidden===0)
 				num++
 			
-		objects.players_online.text=['Игроков онлайн: ','Players online: '][LANG]+ num + ' (' + room_name + ')';
+		const room_desc=['КОМНАТА #','ROOM #'][LANG]+{'states':1,'states2':2,'states3':3,'states4':4,'states4':5}[room_name];
+		objects.players_online.text=['Игроков онлайн: ','Players online: '][LANG]+ num + ' (' + room_desc + ')';
 		
 		
 		//считаем сколько одиночных игроков и сколько столов
