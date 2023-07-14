@@ -1470,7 +1470,7 @@ game = {
 		}
 		
 		
-		if (Math.random()>0.5){
+		if (Math.random()>0.95){
 			objects.desktop.texture=gres.night_bcg.texture;			
 			objects.my_card_name.tint=objects.opp_card_name.tint=0xffffff;
 		}else{
