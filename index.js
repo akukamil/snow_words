@@ -1,6 +1,6 @@
 var M_WIDTH=800, M_HEIGHT=450, gdata={};
 var app ={stage:{},renderer:{}}, game_res, objects={}, state="o",git_src, my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
-var pending_player="", room_name = 'states2', players_node;
+var pending_player="", room_name = 'states3', players_node;
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
 var dict={};
@@ -3234,17 +3234,17 @@ lobby = {
 		if (this.players_cache[uid]){
 			if (!this.players_cache[uid].name){
 				let t=await firebase.database().ref('players/' + uid + '/name').once('value');
-				this.players_cache[uid].name=t.val()||'***';
+				this.players_cache[uid].name=t?.val()||'***';
 			}
 			
 			if (!this.players_cache[uid].rating){
 				let t=await firebase.database().ref('players/' + uid + '/rating').once('value');
-				this.players_cache[uid].rating=t.val()||'***';
+				this.players_cache[uid].rating=t?.val()||'***';
 			}
 				
 			if (!this.players_cache[uid].pic_url){
 				let t=await firebase.database().ref('players/' + uid + '/pic_url').once('value');
-				this.players_cache[uid].pic_url=t.val()||null;
+				this.players_cache[uid].pic_url=t?.val()||null;
 			}
 			
 		}else{
@@ -3252,9 +3252,9 @@ lobby = {
 			this.players_cache[uid]={};
 			let t=await firebase.database().ref('players/' + uid).once('value');
 			t=t.val();
-			this.players_cache[uid].name=t.name||'***';
-			this.players_cache[uid].rating=t.rating||'***';
-			this.players_cache[uid].pic_url=t.pic_url||'';
+			this.players_cache[uid].name=t?.name||'***';
+			this.players_cache[uid].rating=t?.rating||'8';
+			this.players_cache[uid].pic_url=t?.pic_url||'https://i.ibb.co/fpZ8tg2/vk.jpg';
 		}		
 	},
 		
@@ -3801,7 +3801,7 @@ async function load_user_data() {
 			players_node='players_eng';
 		}	
 
-		//room_name = 'states';			
+		//room_name = 'states2';			
 		
 		
 		//получаем остальные данные об игроке
