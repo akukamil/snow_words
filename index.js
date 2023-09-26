@@ -369,7 +369,7 @@ class shop_card_class extends PIXI.Container {
 		this.price_text.tint=gdata.shop_card_price_font_col;
 		this.price_text.anchor.set(0.5,0.5);
 		
-		this.desc_text = new PIXI.BitmapText(data.desc, {fontName: 'mfont',fontSize: gdata.shop_card_desc_font_size,align:'center'});
+		this.desc_text = new PIXI.BitmapText(data.desc, {fontName: 'mfont',fontSize: gdata.shop_card_desc_font_size,align:'center',lineSpacing:40});
 		this.desc_text.x=gdata.shop_card_desc_x;
 		this.desc_text.y=gdata.shop_card_desc_y;
 		this.desc_text.tint=gdata.shop_card_desc_font_col;
