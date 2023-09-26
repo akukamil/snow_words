@@ -1683,31 +1683,26 @@ game = {
 			if (conf === 'no')
 				return;			
 		}
-		
-		
-		
+						
 		//отключаем процессинги
 		some_process.main = function(){};
 				
 		//принимаем локальный стейт
 		state = 'o';
-
 		
 		//убираем окно подтверждения если оно есть
 		if (objects.confirm_cont.visible === true && objects.confirm_cont.ready === true )
 			anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.y,-300]}, false, 1,'easeInOutCubic');		
-				
-				
+								
 		if (game_platform === 'CRAZYGAMES' && result==='my_win')
 			window.CrazyGames.SDK.game.happytime();
 				
 		//сначала завершаем все что связано с оппонентом
 		await this.opponent.stop(result);		
-						
-						
+											
 		objects.game_cont.visible=false;
-		
-
+		objects.my_wall.visible=false;
+		objects.opp_wall.visible=false;
 		objects.opp_card_cont.visible=false;
 		objects.my_card_cont.visible=false;	
 		objects.sea.sprite.visible = false;	
@@ -1717,7 +1712,6 @@ game = {
 		for (let b of objects.snowballs)
 			b.visible = false
 	
-
 		anim2.add(objects.iceberg,{y:[objects.iceberg.y, 450]}, false, 1.57,'linear');	
 		anim2.add(objects.my_icon,{y:[ objects.my_icon.y, -150]}, false, 1.7,'linear');	
 		anim2.add(objects.opp_icon,{y:[ objects.opp_icon.y, -150]}, false, 1.8,'linear');	
