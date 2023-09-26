@@ -1,6 +1,6 @@
 var M_WIDTH=800, M_HEIGHT=450, gdata={};
-var app ={stage:{},renderer:{}}, game_res, objects={}, state="o",git_src, my_role="", LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform="", hidden_state_start = 0, connected = 1;
-var pending_player="", room_name = 'states3', players_node;
+var app ={stage:{},renderer:{}}, game_res, objects={}, state='o',git_src, my_role='', LANG = 0, main_word = '', game_tick=0, my_turn=0, game_id=0, h_state=0, game_platform='', hidden_state_start = 0, connected = 1,fbs=null;
+var pending_player="", room_name = 'states2', players_node;
 var my_data={opp_id : ''},opp_data={};
 var some_process = {};
 var dict={};
@@ -144,7 +144,7 @@ class letter_button_class extends PIXI.Container{
 		this.bcg.buttonMode=true;
 		this.bcg.pointerover=function(){this.tint=0x9999ff};
 		this.bcg.pointerout=function(){this.tint=0xffffff};
-		this.bcg.pointerdown=game.letter_down.bind(game,this);
+		this.bcg.pointerdown=game.letter_down.bind(this);
 		this.bcg.width=this.bcg.height=80;
 		
 		
@@ -154,9 +154,38 @@ class letter_button_class extends PIXI.Container{
 		this.l.y=40;
 		this.l.anchor.set(0.5,0.5);
 		
-		this.addChild(this.bcg,this.l);
+		this.lock_icon=new PIXI.Sprite(gres.lock_img.texture);
+		this.lock_icon.anchor.set(0.5,0.5);
+		this.lock_icon.width=this.lock_icon.height=60;
+		this.lock_icon.x=28;
+		this.lock_icon.y=30;
+		this.lock_icon.visible=false;
+		
+		this.addChild(this.bcg,this.l,this.lock_icon);
 		this.visible=false;
 		this.y = 340;
+		
+		this.lock_time=0;
+		this.ready=true;
+		
+	}
+	
+	lock(alpha){
+		
+		this.bcg.alpha=alpha;
+		this.l.alpha=alpha;
+		this.lock_icon.visible=true;
+		this.lock_icon.scale_xy=0.66666;
+		this.lock_icon.alpha=1;
+		this.lock_time=Date.now();
+		anim2.add(this.lock_icon,{rotation:[0,0.25]}, true, 0.5,'shake');
+	}
+	
+	unlock(){
+		
+		this.bcg.alpha=1;
+		this.l.alpha=1;
+		anim2.add(this.lock_icon,{scale_xy:[0.6666,3],alpha:[1,0]}, false, 0.3,'linear');
 		
 	}
 	
@@ -319,6 +348,7 @@ class shop_card_class extends PIXI.Container {
 		
 		if (data.type==='skin') this.img = new PIXI.Sprite(gres[data.name+'_idle'].texture);
 		if (data.type==='wall') this.img = new PIXI.Sprite(gres.wall.texture);
+		if (data.type==='lock') this.img = new PIXI.Sprite(gres.lock_button.texture);
 		
 		//копируем в даннуе карточки
 		this.data=data
@@ -408,7 +438,7 @@ chat = {
 		}			
 		
 		//загружаем чат
-		firebase.database().ref('chat').orderByChild('tm').limitToLast(20).once('value', snapshot => {chat.chat_load(snapshot.val());});		
+		fbs.ref('chat').orderByChild('tm').limitToLast(20).once('value', snapshot => {chat.chat_load(snapshot.val());});		
 		
 	},			
 
@@ -453,7 +483,7 @@ chat = {
 			await this.chat_updated(c,true);	
 		
 		//подписываемся на новые сообщения
-		firebase.database().ref('chat').on('child_changed', snapshot => {chat.chat_updated(snapshot.val());});
+		fbs.ref('chat').on('child_changed', snapshot => {chat.chat_updated(snapshot.val());});
 	},	
 				
 	async chat_updated(data, first_load) {		
@@ -634,7 +664,7 @@ chat = {
 		if (fb[0] === 'sent') {			
 			const hash=this.make_hash();
 			const index=chat.get_oldest_index();
-			firebase.database().ref('chat/'+index).set({uid:my_data.uid,name:my_data.name,msg:fb[1], tm:firebase.database.ServerValue.TIMESTAMP,index, hash});
+			fbs.ref('chat/'+index).set({uid:my_data.uid,name:my_data.name,msg:fb[1], tm:firebase.database.ServerValue.TIMESTAMP,index, hash});
 		}	
 		
 	},
@@ -968,7 +998,7 @@ anim2 = {
 	
 	shake : function(x) {
 		
-		return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+		return Math.sin(x*2 * Math.PI);
 		
 		
 	},	
@@ -994,7 +1024,7 @@ anim2 = {
 				}
 				
 				//для возвратных функцие конечное значение равно начальному
-				if (func === 'ease2back')
+				if (func === 'ease2back' || func === 'shake')
 					for (let key in params)
 						params[key][1]=params[key][0];					
 					
@@ -1180,7 +1210,7 @@ online_player = {
 		
 		//если мастер то отправляем дополнительное подтверждение о начале
 		if (my_role === 'master')
-			firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"SYN_OK",tm:Date.now()});
+			fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"SYN_OK",tm:Date.now()});
 		else
 			this.check_syn();
 				
@@ -1193,7 +1223,7 @@ online_player = {
 		//вычиcляем рейтинг при проигрыше и устанавливаем его в базу он потом изменится
 		const lose_rating = this.calc_new_rating(my_data.rating, LOSE);
 		if (lose_rating >100 && lose_rating<9999)
-			firebase.database().ref("players/"+my_data.uid+"/rating").set(lose_rating);
+			fbs.ref("players/"+my_data.uid+"/rating").set(lose_rating);
 				
 		//устанавливаем статус в базе данных а если мы не видны то установливаем только скрытое состояние
 		set_state({state : 'p'});
@@ -1211,7 +1241,7 @@ online_player = {
 	send_move : function  (data) {
 		
 		
-		firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"MOVE",tm:Date.now(),data:data});
+		fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"MOVE",tm:Date.now(),data:data});
 
 	},
 	
@@ -1249,11 +1279,11 @@ online_player = {
 		let old_rating = my_data.rating;
 		my_data.rating = this.calc_new_rating (my_data.rating, result_number);
 		objects.my_card_rating.text = my_data.rating;
-		firebase.database().ref(players_node+'/'+my_data.uid+"/rating").set(my_data.rating);
+		fbs.ref(players_node+'/'+my_data.uid+"/rating").set(my_data.rating);
 		
 		//если мы отменили игру то отправляем сопернику уведомление об этом
 		if (result === 'my_cancel')
-			firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"opp_cancel",tm:Date.now()});
+			fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"opp_cancel",tm:Date.now()});
 
 
 
@@ -1262,11 +1292,11 @@ online_player = {
 			
 			//увеличиваем количество игр
 			my_data.games++;
-			firebase.database().ref(players_node+'/'+[my_data.uid]+"/games").set(my_data.games);		
+			fbs.ref(players_node+'/'+[my_data.uid]+"/games").set(my_data.games);		
 
 			//записываем результат в базу данных
 			let duration = ~~((Date.now() - this.start_time)*0.001);
-			firebase.database().ref("finishes/"+game_id + my_role).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result,'duration':duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
+			fbs.ref("finishes/"+game_id + my_role).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result,'duration':duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
 			
 		}
 		
@@ -1452,11 +1482,10 @@ game = {
 	my_move_amount : 0,
 	opp_move_amount : 0,
 	shift_vs_amount : [0,1,1,1,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
-	wall_decay:null,
-	
+	locked_letter:null,
+	wall_decay:null,	
 
-	async activate(role, opponent) {
-		
+	async activate(role, opponent) {		
 		
 		//создаем wall decay для каждой стены
 		if (this.wall_decay===null){
@@ -1468,8 +1497,7 @@ game = {
 					this.wall_decay[i][k]=Math.round((1-(k-1)/(max_life-1))*4);
 			}			
 		}
-		
-		
+				
 		if (Math.random()>0.95){
 			objects.desktop.texture=gres.night_bcg.texture;			
 			objects.my_card_name.tint=objects.opp_card_name.tint=0xffffff;
@@ -1479,8 +1507,7 @@ game = {
 		}
 
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.4,'linear');
-		
-		
+				
 		//устанавливаем роль
 		my_role = role;
 					
@@ -1528,10 +1555,10 @@ game = {
 		objects.my_card_cont.visible = true;
 		objects.opp_card_cont.visible = true;		
 				
-		objects.cur_word.visible = true;	
+		//включаем контейнер с основными элементами
+		objects.game_cont.visible=true;
 		
-		
-		objects.my_words.visible = objects.opp_words.visible = true;	
+
 		objects.my_words.text = objects.opp_words.text = '';	
 		objects.cur_word.text = '';	
 		
@@ -1556,8 +1583,14 @@ game = {
 		opp_data.skin = 'peng';
 		if (this.opponent.name === 'online'){			
 			this.update_opp_skin();				
-			const opp_wall=await firebase.database().ref(players_node+'/'+opp_data.uid +"/wall").once('value');
+			const opp_wall=await fbs.ref(players_node+'/'+opp_data.uid +"/wall").once('value');
 			opp_data.wall=opp_wall.val()||0;
+			
+			//показываем лок
+			if (my_data.lock)
+				anim2.add(objects.lock_button,{x:[850,objects.lock_button.sx]}, true, 0.5,'easeOutBack');
+			else
+				objects.lock_button.visible=false;
 		}			
 			
 		//устанаваем состояния
@@ -1578,8 +1611,7 @@ game = {
 			objects.opp_wall.texture=gres.wall0.texture;	
 			objects.opp_wall.tint=gdata[`wall_${opp_data.wall}_tint`];		
 		}
-		
-		
+				
 		//опускаем наших игроков
 		anim2.add(objects.my_icon,{y:[-150, objects.my_icon.sy]}, true, 1.7,'linear');	
 		anim2.add(objects.opp_icon,{y:[-150, objects.opp_icon.sy]}, true, 1.8,'linear');	
@@ -1589,6 +1621,7 @@ game = {
 			b.visible = false;
 				
 		
+		
 		//определяем структуру слов
 		main_word_conf = [3,3];
 		
@@ -1596,8 +1629,7 @@ game = {
 		let iter = 0;		
 		for (let r = 0 ; r < 2; r++) {
 			
-			let num_of_col = main_word_conf[r];
-			
+			let num_of_col = main_word_conf[r];			
 			b_x_start = 400 - 70 * num_of_col * 0.5;
 			for (let c = 0 ; c < num_of_col ; c++ ) {
 				
@@ -1605,16 +1637,17 @@ game = {
 				let wy = 300 + r * 70;
 				
 				anim2.add(objects.l_buttons[iter],{y:[450, wy]}, true, 0.7,'easeOutBack');	
-				objects.l_buttons[iter].x = wx;
-				
+				objects.l_buttons[iter].x = wx;				
 				objects.l_buttons[iter].set_letter(main_word[iter]);
 				objects.l_buttons[iter].visible = true;	
+				objects.l_buttons[iter].lock_icon.visible=false;
+				objects.l_buttons[iter].l.alpha=1;
+				objects.l_buttons[iter].bcg.alpha=1;
 				iter ++;
 			}			
 			
 		}
-		
-		
+				
 		some_process.main = this.process.bind(game);
 		
 	},
@@ -1623,7 +1656,7 @@ game = {
 				
 		
 		//считываем и обновляем скин соперника
-		let _skin = await firebase.database().ref(players_node+'/'+opp_data.uid +"/skin").once('value');
+		let _skin = await fbs.ref(players_node+'/'+opp_data.uid +"/skin").once('value');
 		_skin = _skin.val();
 		
 		//если такого скина нет
@@ -1657,9 +1690,7 @@ game = {
 				
 		//принимаем локальный стейт
 		state = 'o';
-				
-		//убираем кнопку выхода
-		objects.exit_button.visible = false;		
+
 		
 		//убираем окно подтверждения если оно есть
 		if (objects.confirm_cont.visible === true && objects.confirm_cont.ready === true )
@@ -1672,13 +1703,12 @@ game = {
 		//сначала завершаем все что связано с оппонентом
 		await this.opponent.stop(result);		
 						
-		objects.my_wall.visible=false;
-		objects.opp_wall.visible=false;
+						
+		objects.game_cont.visible=false;
+		
+
 		objects.opp_card_cont.visible=false;
-		objects.my_card_cont.visible=false;
-		objects.cur_word.visible = false;	
-		objects.my_words.visible = false;	
-		objects.opp_words.visible = false;	
+		objects.my_card_cont.visible=false;	
 		objects.sea.sprite.visible = false;	
 		objects.confirm_buttons_cont.visible = false;	
 
@@ -1708,12 +1738,19 @@ game = {
 
 	letter_down(l) {			
 		
-		if (this.my_sink === 1 || this.opp_sink === 1  || objects.req_cont.visible === true)
-			return;
+		if (game.my_sink === 1||game.opp_sink === 1||objects.req_cont.visible === true){
+			sound.play('locked');
+			return;			
+		}
+
 		
+		if (this.lock_icon.visible){
+			message.add('Соперник заблокировал букву...');
+			return;
+		}
 		
 		sound.play('letter_click');	
-		objects.cur_word.text +=l.letter;
+		objects.cur_word.text +=this.letter;
 		
 		if (objects.confirm_buttons_cont.visible === false)
 			anim2.add(objects.confirm_buttons_cont,{x:[900,objects.confirm_buttons_cont.sx]}, true, 0.25,'easeOutBack');	
@@ -1942,10 +1979,39 @@ game = {
 		this.stop('my_lose');
 		
 	},
+			
+	lock_button_down(){
+		
+		if (!objects.lock_button.ready) return;
+		
+		const letter_id=irnd(0,5);
+		const letter=objects.l_buttons[letter_id].letter;
+		
+		//добавляем значек сопернику
+		anim2.add(objects.opp_lock_flag,{y:[-200, objects.opp_lock_flag.sy]}, true, 0.3,'easeOutBack');
+
+		objects.opp_lock_flag.set_letter(letter);
+		objects.opp_lock_flag.lock(1);
+		
+		sound.play('lock')
+		
+		//отправляем эту информацию сопернику
+		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'LOCK',id:letter_id,tm:Date.now()});
+		
+		anim2.add(objects.lock_button,{x:[objects.lock_button.sx, 850]}, false, 0.3,'easeInBack');
+	},
+	
+	lock_my_button(id){
+		
+		sound.play('lock');
+		this.locked_letter=objects.l_buttons[id];
+		this.locked_letter.lock(0.5);
+		
+	},
 		
 	exit_button_down() {
 		
-		if (objects.big_message_cont.visible === true || objects.req_cont.visible === true)
+		if (objects.big_message_cont.visible||objects.req_cont.visible||objects.confirm_cont.visible)
 			return;
 		
 		this.stop('my_cancel');
@@ -2103,11 +2169,9 @@ game = {
 		if (objects.my_icon.state === THROWING)
 			if (game_tick - objects.my_icon.state_time > 0.5)
 				this.set_player_state(objects.my_icon, IDLE);
+				
 		
-		
-		
-		//перемещение игроков  0 1 2 3 4 5 6 7 8 9 
-		
+		//перемещение игроков  0 1 2 3 4 5 6 7 8 9 		
 		if (this.my_move_amount > 0) {
 			
 			let shift_amount = this.shift_vs_amount[this.my_move_amount];			
@@ -2127,6 +2191,23 @@ game = {
 		for (let i = 0; i < objects.sea.points.length; i++) 
 			objects.sea.points[i].y = Math.sin((i * 1.5) + game_tick * 4) * 3 + 400;
 		
+		//разблокировать буквы
+		if (this.locked_letter){
+			if(Date.now()-this.locked_letter.lock_time>20000){
+				this.locked_letter.unlock();				
+				this.locked_letter=null;
+				sound.play('lock')
+			}		
+		}
+		
+		if (objects.opp_lock_flag.visible&&objects.opp_lock_flag.ready){
+			if(Date.now()-objects.opp_lock_flag.lock_time>20000){
+				sound.play('lock')
+				anim2.add(objects.opp_lock_flag,{y:[objects.opp_lock_flag.sy, -200]}, false, 0.3,'easeInBack');			
+			}		
+		}
+
+		
 		//наказание за простой
 		if (my_role === 'master') {
 			if (Date.now() > this.last_word_time + this.max_idle_time ) {
@@ -2137,7 +2218,7 @@ game = {
 				
 				//отправляем слейву
 				if (state === 'p')
-					firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",new_let:new_let,tm:Date.now()});
+					fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"TIME_HIT",new_let:new_let,tm:Date.now()});
 				
 				this.time_hit(new_let);					
 			}
@@ -2274,14 +2355,14 @@ var keep_alive = function() {
 		//убираем из списка если прошло время с момента перехода в скрытое состояние		
 		let cur_ts = Date.now();	
 		let sec_passed = (cur_ts - hidden_state_start)/1000;		
-		if ( sec_passed > 100 )	firebase.database().ref(room_name+'/'+my_data.uid).remove();
+		if ( sec_passed > 100 )	fbs.ref(room_name+'/'+my_data.uid).remove();
 		return;		
 	}
 
 
-	firebase.database().ref(players_node+'/'+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
-	firebase.database().ref("inbox/"+my_data.uid).onDisconnect().remove();
-	firebase.database().ref(room_name + "/"+my_data.uid).onDisconnect().remove();
+	fbs.ref(players_node+'/'+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
+	fbs.ref("inbox/"+my_data.uid).onDisconnect().remove();
+	fbs.ref(room_name + "/"+my_data.uid).onDisconnect().remove();
 
 	set_state({});
 }
@@ -2312,28 +2393,32 @@ var process_new_message = function(msg) {
 		if (msg.sender===opp_data.uid) {
 
 			//получение отказа от игры
-			if (msg.message==="SYN_OK")
+			if (msg.message==='SYN_OK')
 				game.opponent.syn_ok = 1;
 
 			//получение согласия на игру
-			if (msg.message==="TIME_HIT")
+			if (msg.message==='TIME_HIT')
 				game.time_hit(msg.new_let);
 
 			//получение стикера
-			if (msg.message==="MSG")
+			if (msg.message==='MSG')
 				stickers.receive(msg.data);
 
 			//получение сообщение об отмене игры
-			if (msg.message==="opp_cancel" )
+			if (msg.message==='opp_cancel')
 				game.stop('opp_cancel');
+			
+			//получение сообщение о блокировке буквы
+			if (msg.message==='LOCK')
+				game.lock_my_button(msg.id||0);
 								
 			//получение сообщение с ходом игорка
-			if (msg.message==="MOVE")
+			if (msg.message==='MOVE')
 				game.receive_move(msg.data);
 			
 			//получение сообщения о сдаче
-			if (msg.message==="opp_hidden")
-				game.stop("opp_hidden");
+			if (msg.message==='opp_hidden')
+				game.stop('opp_hidden');
 		}
 	}
 
@@ -2386,7 +2471,7 @@ req_dialog = {
 
 		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.5,'easeInBack');
 
-		firebase.database().ref("inbox/"+req_dialog._opp_data.uid).set({sender:my_data.uid,message:"REJECT",tm:Date.now()});
+		fbs.ref("inbox/"+req_dialog._opp_data.uid).set({sender:my_data.uid,message:"REJECT",tm:Date.now()});
 	},
 
 	accept: function() {
@@ -2409,7 +2494,7 @@ req_dialog = {
 				
 		//отправляем информацию о согласии играть с идентификатором игры и словом
 		game_id=~~(Math.random()*999);
-		firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"ACCEPT",tm:Date.now(),game_id:game_id, main_word : main_word});
+		fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"ACCEPT",tm:Date.now(),game_id:game_id, main_word : main_word});
 
 		//заполняем карточку оппонента
 		make_text(objects.opp_card_name,opp_data.name,150);
@@ -2617,6 +2702,8 @@ main_menu = {
 			return;			
 		}		
 		
+		sound.play('click');	
+		
 		this.close();
 		shop.activate();		
 		
@@ -2655,8 +2742,8 @@ shop = {
 		
 		//обновляем количество денег
 		my_data.money -= data.price;
-		firebase.database().ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
-		firebase.database().ref(players_node+'/'+my_data.uid+'/skin').set(data.name);
+		fbs.ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
+		fbs.ref(players_node+'/'+my_data.uid+'/skin').set(data.name);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
 		my_data.skin = data.name;
 		message.add(['Вы купили новый скин )))','You bought a new skin)))'][LANG])
@@ -2679,11 +2766,31 @@ shop = {
 		
 		//обновляем количество денег
 		my_data.money -= data.price;
-		firebase.database().ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
-		firebase.database().ref(players_node+'/'+my_data.uid+'/wall').set(data.wall);
+		fbs.ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
+		fbs.ref(players_node+'/'+my_data.uid+'/wall').set(data.wall);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
 		my_data.wall = data.wall;
 		message.add(['Вы купили стену на игровой сеанс)))','You bought a wall)))'][LANG])
+		
+	},
+	
+	async try_buy_lock(data){
+		
+		if (my_data.lock) {
+			message.add(['У вас уже есть эта функция!!!','You already have this option'][LANG]);
+			return;
+		}
+		
+		let res = await confirm_dialog.show(['Точно хотите купить?','Sure?'][LANG]);
+		if (res === 'no')
+			return;
+		
+		//обновляем количество денег
+		my_data.money -= data.price;
+		fbs.ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
+		objects.ice_cream_balance.text = 'x' + my_data.money;
+		my_data.lock = 1;
+		message.add(['Блокировка буквы у соперника на 30 сек)))','You can block opponents letter)))'][LANG])
 		
 	},
 			
@@ -2698,7 +2805,8 @@ shop = {
 		
 		if (this.data.type==='skin') shop.try_buy_skin(this.data);
 		if (this.data.type==='wall') shop.try_buy_wall(this.data);
-	
+		if (this.data.type==='lock') shop.try_buy_lock(this.data);
+		
 	},
 		
 	exit_down : function() {
@@ -2776,7 +2884,7 @@ lb = {
 
 	update: function () {
 
-		firebase.database().ref(players_node).orderByChild('rating').limitToLast(25).once('value').then((snapshot) => {
+		fbs.ref(players_node).orderByChild('rating').limitToLast(25).once('value').then((snapshot) => {
 
 			if (snapshot.val()===null) {
 			  //console.log("Что-то не получилось получить данные о рейтингах");
@@ -2893,7 +3001,7 @@ lobby = {
 		this.add_card_ai();	
 				
 		//подписываемся на изменения состояний пользователей
-		firebase.database().ref(room_name) .on('value', (snapshot) => {lobby.players_list_updated(snapshot.val());});
+		fbs.ref(room_name) .on('value', (snapshot) => {lobby.players_list_updated(snapshot.val());});
 
 	},
 
@@ -3233,24 +3341,24 @@ lobby = {
 	async update_players_cache_data(uid){
 		if (this.players_cache[uid]){
 			if (!this.players_cache[uid].name){
-				let t=await firebase.database().ref('players/' + uid + '/name').once('value');
+				let t=await fbs.ref('players/' + uid + '/name').once('value');
 				this.players_cache[uid].name=t?.val()||'***';
 			}
 			
 			if (!this.players_cache[uid].rating){
-				let t=await firebase.database().ref('players/' + uid + '/rating').once('value');
+				let t=await fbs.ref('players/' + uid + '/rating').once('value');
 				this.players_cache[uid].rating=t?.val()||'***';
 			}
 				
 			if (!this.players_cache[uid].pic_url){
-				let t=await firebase.database().ref('players/' + uid + '/pic_url').once('value');
+				let t=await fbs.ref('players/' + uid + '/pic_url').once('value');
 				this.players_cache[uid].pic_url=t?.val()||null;
 			}
 			
 		}else{
 			
 			this.players_cache[uid]={};
-			let t=await firebase.database().ref('players/' + uid).once('value');
+			let t=await fbs.ref('players/' + uid).once('value');
 			t=t.val();
 			this.players_cache[uid].name=t?.name||'***';
 			this.players_cache[uid].rating=t?.rating||'8';
@@ -3403,7 +3511,7 @@ lobby = {
 		pending_player="";
 		
 		//отписываемся от изменений состояний пользователей
-		firebase.database().ref(room_name).off();
+		fbs.ref(room_name).off();
 
 	},
 
@@ -3425,7 +3533,7 @@ lobby = {
 
 		//отправляем сообщение что мы уже не заинтересованы в игре
 		if (pending_player!=='') {
-			firebase.database().ref("inbox/"+pending_player).set({sender:my_data.uid,message:"INV_REM",tm:Date.now()});
+			fbs.ref("inbox/"+pending_player).set({sender:my_data.uid,message:"INV_REM",tm:Date.now()});
 			pending_player='';
 		}
 
@@ -3466,7 +3574,7 @@ lobby = {
 		{
 			sound.play('click');	
 			objects.invite_header6.text = ['Ждем ответ...','Await...'][LANG];
-			firebase.database().ref("inbox/"+lobby._opp_data.uid).set({sender:my_data.uid,message:"INV",tm:Date.now()});
+			fbs.ref("inbox/"+lobby._opp_data.uid).set({sender:my_data.uid,message:"INV",tm:Date.now()});
 			pending_player=lobby._opp_data.uid;
 		}
 
@@ -3738,19 +3846,19 @@ async function check_daily_reward (last_seen_ts) {
 	let last_seen_day = new Date(last_seen_ts).getDate();		
 	
 	//считываем текущее время
-	await firebase.database().ref("server_time").set(firebase.database.ServerValue.TIMESTAMP);
+	await fbs.ref("server_time").set(firebase.database.ServerValue.TIMESTAMP);
 
 	//определяем текущий день
-	let _cur_ts = await firebase.database().ref("server_time").once('value');
+	let _cur_ts = await fbs.ref("server_time").once('value');
 	let cur_ts = _cur_ts.val();
 	let cur_day = new Date(cur_ts).getDate();
 	
 	//обновляем время последнего посещения
-	firebase.database().ref(players_node+'/'+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
+	fbs.ref(players_node+'/'+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
 
 	if (cur_day !== last_seen_day) {		
 		my_data.money++;
-		firebase.database().ref(players_node+'/'+my_data.uid + "/money").set(my_data.money);		
+		fbs.ref(players_node+'/'+my_data.uid + "/money").set(my_data.money);		
 		console.log("Награда за новый день!")
 		
 		await anim2.add(objects.daily_reward,{y:[450, objects.daily_reward.sy]}, true, 1,'easeOutBack');
@@ -3801,11 +3909,11 @@ async function load_user_data() {
 			players_node='players_eng';
 		}	
 
-		//room_name = 'states2';			
+		//room_name = 'states3';			
 		
 		
 		//получаем остальные данные об игроке
-		let snapshot = await firebase.database().ref(players_node+'/'+my_data.uid).once('value');
+		let snapshot = await fbs.ref(players_node+'/'+my_data.uid).once('value');
 		let data = snapshot.val();
 		
 		
@@ -3825,23 +3933,23 @@ async function load_user_data() {
 		
 			
 		//отключение от игры и удаление не нужного
-		firebase.database().ref("inbox/"+my_data.uid).onDisconnect().remove();
-		firebase.database().ref(room_name + "/"+my_data.uid).onDisconnect().remove();			
+		fbs.ref("inbox/"+my_data.uid).onDisconnect().remove();
+		fbs.ref(room_name + "/"+my_data.uid).onDisconnect().remove();			
 			
 		//устанавливаем рейтинг в попап
 		objects.id_rating.text=objects.my_card_rating.text = my_data.rating;
 
 		//обновляем почтовый ящик
-		firebase.database().ref("inbox/"+my_data.uid).set({sender:"-",message:"-",tm:"-",data:{x1:0,y1:0,x2:0,y2:0,board_state:0}});
+		fbs.ref("inbox/"+my_data.uid).set({sender:"-",message:"-",tm:"-",data:{x1:0,y1:0,x2:0,y2:0,board_state:0}});
 
 		//подписываемся на новые сообщения
-		firebase.database().ref("inbox/"+my_data.uid).on('value', (snapshot) => { process_new_message(snapshot.val());});
+		fbs.ref("inbox/"+my_data.uid).on('value', (snapshot) => { process_new_message(snapshot.val());});
 
 		//обновляем данные в файербейс так как могли поменяться имя или фото
-		firebase.database().ref(players_node+'/'+my_data.uid + "/pic_url").set(my_data.pic_url);
-		firebase.database().ref(players_node+'/'+my_data.uid + "/name").set(my_data.name);
-		firebase.database().ref(players_node+'/'+my_data.uid + "/wall").set(my_data.wall);
-		firebase.database().ref(players_node+'/'+my_data.uid + "/skin").set(my_data.skin);
+		fbs.ref(players_node+'/'+my_data.uid + "/pic_url").set(my_data.pic_url);
+		fbs.ref(players_node+'/'+my_data.uid + "/name").set(my_data.name);
+		fbs.ref(players_node+'/'+my_data.uid + "/wall").set(my_data.wall);
+		fbs.ref(players_node+'/'+my_data.uid + "/skin").set(my_data.skin);
 
 		//устанавливаем мой статус в онлайн
 		set_state({state : 'o'});
@@ -3872,7 +3980,7 @@ function set_state(params) {
 	if (opp_data.uid!==undefined)
 		small_opp_id=opp_data.uid.substring(0,10);
 
-	firebase.database().ref(room_name + "/"+my_data.uid).set({state:state, name:my_data.name, rating : my_data.rating, hidden:h_state, opp_id : small_opp_id});
+	fbs.ref(room_name + "/"+my_data.uid).set({state:state, name:my_data.name, rating : my_data.rating, hidden:h_state, opp_id : small_opp_id});
 
 }
 
@@ -3884,7 +3992,7 @@ function vis_change() {
 		
 		if (state === 'p' && game.my_sink === 0 && game.opp_sink === 0) {
 			game.stop('my_hidden')			
-			firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"opp_hidden",tm:Date.now()});
+			fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"opp_hidden",tm:Date.now()});
 		}
 	}
 	
@@ -3991,6 +4099,9 @@ async function init_game_env() {
 		});
 	}
 	
+	//короткое обращение к базе данных
+	fbs=firebase.database();
+	
 	app.stage = new PIXI.Container();
 	app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});
 	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
@@ -4068,8 +4179,7 @@ async function init_game_env() {
 		chat.wheel_event(Math.sign(event.deltaY));
 	});			
 	window.addEventListener('keydown', function(event) { feedback.key_down(event.key)});
-			
-			
+						
 	//keep-alive сервис
 	setInterval(function()	{keep_alive()}, 40000);
 			
@@ -4105,6 +4215,7 @@ async function load_resources() {
 	game_res.add('close_it',git_src+'/sounds/close_it.mp3');
 	game_res.add('game_start',git_src+'/sounds/game_start.mp3');
 	game_res.add('lose',git_src+'/sounds/lose.mp3');
+	game_res.add('lock',git_src+'/sounds/lock.mp3');
 	game_res.add('message',git_src+'/sounds/message.mp3');
 	game_res.add('bad_move',git_src+'/sounds/bad_move.mp3');
 	game_res.add('win',git_src+'/sounds/win.mp3');
