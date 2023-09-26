@@ -1498,15 +1498,7 @@ game = {
 			}			
 		}
 				
-		if (Math.random()>0.95){
-			objects.desktop.texture=gres.night_bcg.texture;			
-			objects.my_card_name.tint=objects.opp_card_name.tint=0xffffff;
-		}else{
-			objects.my_card_name.tint=objects.opp_card_name.tint=0x222A35;
-			objects.desktop.texture=gres.desktop2.texture;		
-		}
 
-		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.4,'linear');
 				
 		//устанавливаем роль
 		my_role = role;
@@ -1525,8 +1517,7 @@ game = {
 			anim2.kill_anim(b);
 		}
 
-		this.max_idle_time = 15000;	
-		
+		this.max_idle_time = 15000;			
 		
 		//остаточное количество движения
 		this.my_move_amount = 0;
@@ -1545,20 +1536,30 @@ game = {
 		//если открыт чат то закрываем его
 		if (objects.chat_cont.visible===true) chat.close();
 		
+		
+		if (Math.random()>0.95){
+			objects.desktop.texture=gres.night_bcg.texture;			
+			objects.my_card_name.tint=objects.opp_card_name.tint=0xffffff;
+		}else{
+			objects.my_card_name.tint=objects.opp_card_name.tint=0x222A35;
+			objects.desktop.texture=gres.desktop2.texture;		
+		}
+
+		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.4,'linear');
+		
 		//активируем все что связано с оппонентом
 		this.opponent.activate();
 		
 		//воспроизводим звук о начале игры
 		sound.play('game_start');	
-				
+		
 		//показываем карточки игроков		
 		objects.my_card_cont.visible = true;
 		objects.opp_card_cont.visible = true;		
-				
+			
 		//включаем контейнер с основными элементами
 		objects.game_cont.visible=true;
 		
-
 		objects.my_words.text = objects.opp_words.text = '';	
 		objects.cur_word.text = '';	
 		
