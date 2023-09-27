@@ -2168,6 +2168,8 @@ game = {
 			if (game_tick - objects.my_icon.state_time > 0.5)
 				this.set_player_state(objects.my_icon, IDLE);
 				
+		if (objects.lock_button.visible)
+			objects.lock_button.alpha=Math.abs(Math.sin(game_tick))
 		
 		//перемещение игроков  0 1 2 3 4 5 6 7 8 9 		
 		if (this.my_move_amount > 0) {
