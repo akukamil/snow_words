@@ -2721,8 +2721,7 @@ main_menu = {
 }
 
 shop = {
-	
-	
+		
 	activate : function () {
 		
 		anim2.add(objects.shop_cont,{alpha: [0,1]}, true, 0.5,'linear');
@@ -3897,8 +3896,7 @@ async function load_user_data() {
 
 		objects.id_avatar.texture=objects.my_avatar.texture=loader.resources.my_avatar.texture;
 		
-			
-		
+				
 		//две комнаты для английского  и русского языков
 		if (LANG===0){
 			await auth2.load_script(git_src+'/rus_dict.js');
@@ -3925,6 +3923,29 @@ async function load_user_data() {
 		my_data.skin = (data && data.skin) || 'peng';
 		my_data.money = (data && data.money)  || 0;		
 		my_data.wall = 0;		
+
+
+		//случайно дарим бонусы
+		if (my_data.rating<1600){
+			
+			let start_bonus=0;
+			if(Math.random()>0.9){
+				start_bonus=1
+				my_data.wall=irnd(1,3);
+				fbs.ref(players_node+'/'+my_data.uid+'/wall').set(my_data.wall);				
+			}
+
+			if(Math.random()>0.9){
+				start_bonus=1
+				my_data.lock=60	
+			}
+			
+			if (start_bonus)
+				message.add('У Вас есть бонусы)))');
+			
+			
+						
+		}
 
 
 		//определяем последнее время посещения
