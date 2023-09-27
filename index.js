@@ -1987,20 +1987,23 @@ game = {
 
 		objects.opp_lock_flag.set_letter(letter);
 		objects.opp_lock_flag.lock(1);
+		objects.opp_lock_flag.time=my_data.lock*1000;
 		
 		sound.play('lock')
 		
 		//отправляем эту информацию сопернику
-		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'LOCK',id:letter_id,tm:Date.now()});
-		
+		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'LOCK',id:letter_id,time:my_data.lock,tm:Date.now()});
+				
 		anim2.add(objects.lock_button,{x:[objects.lock_button.sx, 850]}, false, 0.3,'easeInBack');
 	},
 	
-	lock_my_button(id){
+	lock_my_button(id,time){
+		
 		
 		sound.play('lock');
 		this.locked_letter=objects.l_buttons[id];
 		this.locked_letter.lock(0.5);
+		this.locked_letter.time=time*1000;
 		
 	},
 		
@@ -2186,17 +2189,18 @@ game = {
 		for (let i = 0; i < objects.sea.points.length; i++) 
 			objects.sea.points[i].y = Math.sin((i * 1.5) + game_tick * 4) * 3 + 400;
 		
-		//разблокировать буквы
+		//разблокировать мои буквы
 		if (this.locked_letter){
-			if(Date.now()-this.locked_letter.lock_time>20000){
+			if(Date.now()-this.locked_letter.lock_time>this.locked_letter.time){
 				this.locked_letter.unlock();				
 				this.locked_letter=null;
 				sound.play('lock')
 			}		
 		}
 		
+		//разблокировать буквы соперника
 		if (objects.opp_lock_flag.visible&&objects.opp_lock_flag.ready){
-			if(Date.now()-objects.opp_lock_flag.lock_time>20000){
+			if(Date.now()-objects.opp_lock_flag.lock_time>objects.opp_lock_flag.time){
 				sound.play('lock')
 				anim2.add(objects.opp_lock_flag,{y:[objects.opp_lock_flag.sy, -200]}, false, 0.3,'easeInBack');			
 			}		
@@ -2405,7 +2409,7 @@ var process_new_message = function(msg) {
 			
 			//получение сообщение о блокировке буквы
 			if (msg.message==='LOCK')
-				game.lock_my_button(msg.id||0);
+				game.lock_my_button(msg.id||0,msg.time||30);
 								
 			//получение сообщение с ходом игорка
 			if (msg.message==='MOVE')
@@ -2784,8 +2788,8 @@ shop = {
 		my_data.money -= data.price;
 		fbs.ref(players_node+'/'+my_data.uid+'/money').set(my_data.money);
 		objects.ice_cream_balance.text = 'x' + my_data.money;
-		my_data.lock = 1;
-		message.add(['Блокировка буквы у соперника на 30 сек)))','You can block opponents letter)))'][LANG])
+		my_data.lock = data.time;
+		message.add([`Блокировка буквы у соперника на ${data.time} сек)))`,'You can block opponents letter)))'][LANG])
 		
 	},
 			
@@ -4226,7 +4230,7 @@ async function load_resources() {
 	game_res.add('wall_hit',git_src+'/sounds/wall_hit.mp3')
 	game_res.add('wall_break',git_src+'/sounds/wall_break.mp3')
 	game_res.add('keypress',git_src+'/sounds/keypress.mp3')
-	game_res.add('inst_msg',git_src+'sounds/inst_msg.mp3');
+	game_res.add('inst_msg',git_src+'/sounds/inst_msg.mp3');
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++)
