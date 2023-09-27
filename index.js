@@ -2498,7 +2498,7 @@ req_dialog = {
 		fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"ACCEPT",tm:Date.now(),game_id:game_id, main_word : main_word});
 
 		//заполняем карточку оппонента
-		make_text(objects.opp_card_name,opp_data.name,150);
+		make_text(objects.opp_card_name,opp_data.name,140);
 		objects.opp_card_rating.text=objects.req_rating.text;
 		objects.opp_avatar.texture=objects.req_avatar.texture;
 
@@ -3464,7 +3464,7 @@ lobby = {
 
 		//заполняем карточу приглашения данными
 		objects.invite_avatar.texture=objects.mini_cards[cart_id].avatar.texture;
-		make_text(objects.invite_name,lobby._opp_data.name,230);
+		make_text(objects.invite_name,lobby._opp_data.name,190);
 		objects.invite_rating.text=objects.mini_cards[cart_id].rating_text.text;
 
 	},
