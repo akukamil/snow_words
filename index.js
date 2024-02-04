@@ -3743,7 +3743,7 @@ auth2 = {
 				my_data.name = this.get_random_name(my_data.uid);
 			
 			//если английский яндекс до добавляем к имени страну
-			let country_code = await this.get_country_code();
+			let country_code = await this.get_country_code()||'';
 			my_data.name = my_data.name + ' (' + country_code + ')';			
 
 
